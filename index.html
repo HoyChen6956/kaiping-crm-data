@@ -1,0 +1,2824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客户管理系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft YaHei','Segoe UI',sans-serif;}
+body{background:#f0f2f5;color:#333;font-size:14px;}
+/* ===== 固定顶部区域 ===== */
+.fixed-top{position:fixed;top:0;left:0;right:0;z-index:1000;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:linear-gradient(135deg,#1a5276,#2e86c1);color:#fff;}
+.top-bar h1{font-size:22px;font-weight:700;letter-spacing:2px;}
+.top-bar .datetime{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;}
+/* 相关链接区 */
+.link-bar{padding:8px 24px;background:#eaf2f8;border-bottom:1px solid #d4e2ee;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.link-bar .label{font-weight:700;color:#1a5276;font-size:13px;margin-right:4px;}
+.link-bar a{display:inline-flex;align-items:center;gap:3px;padding:4px 12px;border-radius:4px;background:#fff;border:1px solid #bed8ec;color:#1a5276;text-decoration:none;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.link-bar a:hover{background:#2e86c1;color:#fff;border-color:#2e86c1;}
+.link-bar a .del,.link-bar a .edit{margin-left:4px;font-size:11px;opacity:.5;cursor:pointer;}
+.link-bar a .del:hover{opacity:1;color:#e74c3c;}
+.link-bar a .edit:hover{opacity:1;color:#2e86c1;}
+.link-bar .add-link-btn,.link-bar .add-file-btn{padding:4px 10px;border-radius:4px;border:1px dashed #2e86c1;background:transparent;color:#2e86c1;cursor:pointer;font-size:12px;}
+.link-bar .add-link-btn:hover,.link-bar .add-file-btn:hover{background:#d4e2ee;}
+/* 搜索栏 */
+.search-bar{padding:10px 24px;background:#fff;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+.search-bar select.search-select{padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;background:#fff;cursor:pointer;flex-shrink:0;}
+.search-bar select.search-select:focus{outline:none;border-color:#2e86c1;box-shadow:0 0 0 2px rgba(46,134,193,.15);}
+.search-bar input[type=text]{flex:1;min-width:200px;padding:7px 12px;border:1px solid #ccc;border-radius:4px;font-size:13px;}
+.search-bar input[type=text]:focus{outline:none;border-color:#2e86c1;box-shadow:0 0 0 2px rgba(46,134,193,.15);}
+.search-bar button{padding:7px 16px;border:none;border-radius:4px;cursor:pointer;font-size:13px;transition:all .15s;}
+.btn-reset{background:#e8e8e8;color:#666;}
+.btn-reset:hover{background:#d5d5d5;}
+.btn-import{background:#27ae60;color:#fff;}
+.btn-import:hover{background:#229954;}
+.btn-export{background:#e67e22;color:#fff;}
+.btn-export:hover{background:#d35400;}
+.btn-add{background:#2e86c1;color:#fff;}
+.btn-add:hover{background:#21618c;}
+.btn-batch-del{background:#e74c3c;color:#fff;}
+.btn-batch-del:hover{background:#c0392b;}
+/* ===== 主体表格区域 ===== */
+.table-container{margin-top:180px;padding:0 24px 24px;}
+.table-info{padding:8px 0;color:#666;font-size:13px;}
+.table-info b{color:#2e86c1;}
+.table-wrapper{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+/* 固定表头 */
+.table-scroll{max-height:calc(100vh - 260px);overflow:auto;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;}
+thead th{position:sticky;top:0;z-index:10;background:#2e86c1;color:#fff;padding:10px 8px;text-align:left;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid rgba(255,255,255,.15);position:sticky;top:0;}
+thead th .col-resize-handle{position:absolute;right:0;top:0;width:5px;height:100%;cursor:col-resize;background:transparent;z-index:11;}
+thead th .col-resize-handle:hover{background:rgba(255,255,255,.3);}
+thead th:last-child{border-right:none;}
+thead th .sort-icon{font-size:10px;margin-left:2px;opacity:.6;}
+thead th:hover{background:#21618c;}
+tbody td{padding:8px;border-bottom:1px solid #eee;font-size:13px;word-break:break-word;line-height:1.5;vertical-align:middle;overflow:visible;}
+tbody tr.row-alt{background:#fafbfc;}
+tbody tr.row-hover{background:#eaf2f8 !important;}
+.col-ops a{display:inline-block;margin-right:6px;padding:2px 8px;border-radius:3px;font-size:12px;cursor:pointer;text-decoration:none;}
+.op-view{background:#d4e2ee;color:#1a5276;}
+.op-view:hover{background:#2e86c1;color:#fff;}
+.op-edit{background:#d5f5e3;color:#27ae60;}
+.op-edit:hover{background:#27ae60;color:#fff;}
+.op-del{background:#fadbd8;color:#e74c3c;}
+.op-del:hover{background:#e74c3c;color:#fff;}
+/* 分页 */
+.pagination{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-top:1px solid #eee;}
+.pagination .page-info{font-size:13px;color:#666;}
+.pagination .page-ctrl{display:flex;gap:4px;align-items:center;}
+.pagination button{padding:5px 10px;border:1px solid #ddd;background:#fff;border-radius:3px;cursor:pointer;font-size:12px;}
+.pagination button:hover:not(:disabled){background:#2e86c1;color:#fff;border-color:#2e86c1;}
+.pagination button:disabled{opacity:.4;cursor:not-allowed;}
+.pagination select{padding:4px 8px;border:1px solid #ddd;border-radius:3px;font-size:12px;}
+/* ===== 模态弹窗 ===== */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:2000;justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:#fff;border-radius:10px;width:920px;max-width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.2);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:linear-gradient(135deg,#1a5276,#2e86c1);color:#fff;}
+.modal-header h2{font-size:18px;}
+.modal-close{background:none;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:#fdebd0;}
+.modal-body{padding:0 24px 20px;overflow-y:auto;flex:1;}
+/* Tab */
+.tabs{display:flex;gap:0;border-bottom:2px solid #e0e0e0;position:sticky;top:0;background:#fff;z-index:50;padding:14px 0 0;margin:0 -24px 16px;border-left:0;border-right:0;padding-left:24px;padding-right:24px;box-shadow:0 2px 4px rgba(0,0,0,.06);}
+.tab-btn{padding:10px 20px;cursor:pointer;border:none;background:none;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .15s;}
+.tab-btn:hover{color:#2e86c1;}
+.tab-btn.active{color:#2e86c1;border-bottom-color:#2e86c1;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* 表单 */
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;margin-bottom:5px;font-weight:600;color:#555;font-size:13px;}
+.form-group label .required{color:#e74c3c;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px;transition:border-color .15s;box-sizing:border-box;font-family:inherit;}
+.form-group textarea{min-height:38px;resize:vertical;line-height:1.5;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#2e86c1;box-shadow:0 0 0 2px rgba(46,134,193,.12);}
+.form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+/* 多行表格表单 */
+.multi-section{margin-bottom:16px;}
+.multi-section .multi-title{font-weight:700;color:#1a5276;margin-bottom:8px;font-size:14px;padding-bottom:4px;border-bottom:1px dashed #ccc;}
+.multi-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.multi-table th{background:#eaf2f8;color:#333;padding:6px 8px;text-align:left;font-weight:600;border:1px solid #d4e2ee;white-space:nowrap;position:relative;}
+.multi-table th .col-resize-handle{position:absolute;right:-1px;top:-1px;width:5px;height:calc(100% + 2px);cursor:col-resize;background:transparent;z-index:1;}
+.multi-table th .col-resize-handle:hover{background:rgba(46,134,193,.3);}
+.multi-table td{padding:4px;vertical-align:middle;}
+.multi-table td input,.multi-table td textarea,.multi-table td select{width:100%;padding:5px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;vertical-align:middle;box-sizing:border-box;font-family:inherit;}
+.multi-table td textarea{min-height:30px;resize:vertical;line-height:1.4;}
+.multi-table td input:focus,.multi-table td select:focus{outline:none;border-color:#2e86c1;}
+.multi-table .del-row-btn{background:#fadbd8;color:#e74c3c;border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;}
+.multi-table .del-row-btn:hover{background:#e74c3c;color:#fff;}
+.add-row-btn{margin-top:6px;padding:4px 12px;background:#eaf2f8;border:1px dashed #2e86c1;border-radius:4px;color:#2e86c1;cursor:pointer;font-size:12px;}
+.add-row-btn:hover{background:#d4e2ee;}
+/* 查看模式样式 */
+.view-mode .multi-table td{padding:6px 8px;border:1px solid #d4e2ee;vertical-align:middle;}
+.view-mode .multi-table td input{border:none;background:transparent;}
+.view-mode .form-group input,.view-mode .form-group select,.view-mode .form-group textarea{background:#f9f9f9;border-color:#eee;color:#333;}
+/* 模态底部 */
+.modal-footer{padding:12px 24px;background:#f8f9fa;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;}
+.modal-footer button{padding:8px 24px;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;}
+.btn-save{background:#27ae60;color:#fff;}
+.btn-save:hover{background:#229954;}
+.btn-cancel{background:#e8e8e8;color:#666;}
+.btn-cancel:hover{background:#d5d5d5;}
+/* 提示 */
+.toast{position:fixed;top:200px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;padding:10px 28px;border-radius:6px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+/* 隐藏文件输入 */
+.file-input-hidden{display:none;}
+/* 内容自动换行不截断 */
+td .cell-text{word-break:break-all;line-height:1.5;display:block;}
+/* 滚动条美化 */
+.table-scroll::-webkit-scrollbar,.modal-body::-webkit-scrollbar{width:8px;height:8px;}
+.table-scroll::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb{background:#c0c0c0;border-radius:4px;}
+.table-scroll::-webkit-scrollbar-thumb:hover,.modal-body::-webkit-scrollbar-thumb:hover{background:#a0a0a0;}
+/* 导入弹窗拖拽区 */
+.import-drop-zone{border:2px dashed #2e86c1;border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fbfd;}
+.import-drop-zone:hover,.import-drop-zone.dragover{background:#eaf2f8;border-color:#1a5276;}
+.import-drop-zone .dz-icon{font-size:36px;color:#2e86c1;margin-bottom:10px;line-height:1;}
+.import-drop-zone .dz-text{font-size:14px;color:#666;}
+.import-drop-zone .dz-hint{font-size:12px;color:#999;margin-top:6px;}
+.import-template-btn{display:inline-block;margin-bottom:16px;padding:8px 20px;background:#eaf2f8;border:1px solid #2e86c1;border-radius:4px;color:#2e86c1;cursor:pointer;font-size:13px;transition:all .15s;}
+.import-template-btn:hover{background:#d4e2ee;}
+/* 本地文件浏览按钮 */
+.browse-file-btn{display:inline-block;padding:6px 14px;background:#eaf2f8;border:1px solid #2e86c1;border-radius:4px;color:#2e86c1;cursor:pointer;font-size:12px;transition:all .15s;margin-left:8px;vertical-align:middle;}
+.browse-file-btn:hover{background:#d4e2ee;}
+/* 自定义每页条数输入 */
+.page-size-custom{width:50px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;font-size:12px;text-align:center;}
+.page-size-custom:focus{outline:none;border-color:#2e86c1;}
+.page-size-label{font-size:12px;color:#666;margin-left:6px;}
+/* 登录弹窗 */
+.login-overlay{display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#0d3b66 0%,#1a5276 30%,#2e86c1 70%,#3498db 100%);z-index:9999;justify-content:center;align-items:center;overflow-y:auto;}
+.login-overlay.hide{display:none;}
+.login-overlay::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.08) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.06) 0%,transparent 50%);pointer-events:none;}
+.login-page-title{position:absolute;top:32px;left:40px;z-index:2;}
+.login-page-title .lp-cn{font-size:22px;font-weight:700;color:#fff;letter-spacing:2px;line-height:1.3;text-shadow:0 2px 8px rgba(0,0,0,.3);}
+.login-page-title .lp-en{font-size:12px;font-weight:400;color:rgba(255,255,255,.7);letter-spacing:1.5px;margin-top:4px;}
+.login-bottom-text{position:absolute;bottom:24px;left:0;right:0;text-align:center;z-index:2;font-size:12px;color:rgba(255,255,255,.6);letter-spacing:1px;}
+.login-box{position:relative;background:#fff;border-radius:16px;padding:40px 40px 32px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3),0 0 0 1px rgba(255,255,255,.2);z-index:1;}
+.login-box .login-group{margin-bottom:16px;}
+.login-box .login-group label{display:block;margin-bottom:6px;font-weight:600;color:#555;font-size:13px;}
+.login-box .login-group input{width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:6px;font-size:14px;box-sizing:border-box;transition:all .15s;}
+.login-box .login-group input:focus{outline:none;border-color:#2e86c1;box-shadow:0 0 0 3px rgba(46,134,193,.15);}
+.login-box .btn-login{width:100%;padding:12px;background:linear-gradient(135deg,#0d3b66,#2e86c1);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:all .15s;}
+.login-box .btn-login:hover{background:linear-gradient(135deg,#1a5276,#3498db);transform:translateY(-1px);box-shadow:0 4px 12px rgba(46,134,193,.4);}
+.login-box .btn-login:active{transform:translateY(0);}
+.login-error{color:#e74c3c;font-size:12px;margin-top:8px;text-align:center;display:none;}
+.login-footer{text-align:center;margin-top:20px;font-size:11px;color:#bbb;}
+/* 排序箭头 */
+.sort-icon-inline{display:inline;margin-left:3px;font-size:12px;vertical-align:middle;opacity:.35;cursor:pointer;}
+.sort-icon-inline.asc{opacity:1;color:#fff;font-weight:bold;}
+.sort-icon-inline.desc{opacity:1;color:#fff;font-weight:bold;}
+/* 模块导入导出按钮 */
+.module-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px dashed #ccc;}
+.module-toolbar .module-title{font-weight:700;color:#1a5276;font-size:14px;flex:1;}
+.btn-module-exp{padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;background:#eaf2f8;border:1px solid #2e86c1;color:#2e86c1;}
+.btn-module-exp:hover{background:#d4e2ee;}
+.btn-module-imp{padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;background:#eaf2f8;border:1px solid #27ae60;color:#27ae60;}
+.btn-module-imp:hover{background:#d5f5e3;}
+.file-label{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;background:#eaf2f8;border:1px solid #27ae60;color:#27ae60;position:relative;overflow:hidden;}
+.file-label:hover{background:#d5f5e3;}
+.file-label input{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+.multi-title .btn-module-exp,.multi-title .btn-module-imp,.multi-title .file-label{float:right;font-weight:normal;margin-left:4px;margin-top:-1px;}
+/* 备注按钮 */
+.op-remark{background:#fef9e7;color:#f39c12;}
+.op-remark:hover{background:#f39c12;color:#fff;}
+/* 备注文本域 */
+.remark-textarea{width:100%;min-height:54px;padding:8px 10px;border:1px solid #ddd;border-radius:3px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box;}
+.remark-textarea:focus{outline:none;border-color:#2e86c1;}
+.view-mode .remark-textarea{background:#f9f9f9;border-color:#eee;color:#333;}
+/* 弹窗内多行表格分页+批量删除 */
+.row-check-td{width:30px;text-align:center;}
+.row-check-td input[type=checkbox]{cursor:pointer;}
+.batch-del-btn{margin-left:6px;padding:4px 12px;background:#fadbd8;border:1px solid #e74c3c;border-radius:4px;color:#e74c3c;cursor:pointer;font-size:12px;}
+.batch-del-btn:hover{background:#e74c3c;color:#fff;}
+.module-pagination{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;flex-wrap:wrap;}
+.module-pagination .mp-btn{min-width:28px;height:28px;border:1px solid #ddd;border-radius:4px;background:#fff;color:#666;cursor:pointer;font-size:12px;padding:0 6px;transition:all .15s;}
+.module-pagination .mp-btn:hover:not(:disabled){background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;}
+.module-pagination .mp-btn.active{background:#2e86c1;border-color:#2e86c1;color:#fff;}
+.module-pagination .mp-btn:disabled{opacity:.4;cursor:default;}
+.module-pagination .mp-info{font-size:12px;color:#999;margin:0 8px;}
+.module-pagination .mp-jump{width:40px;height:28px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px;}
+.module-pagination .mp-jump:focus{outline:none;border-color:#2e86c1;}
+.module-pagination .mp-size-input{width:40px;height:28px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px;margin-left:4px;}
+.module-pagination .mp-size-input:focus{outline:none;border-color:#2e86c1;}
+.module-pagination .mp-size-label{font-size:12px;color:#999;margin-left:4px;}
+/* 悬浮按钮 */
+.float-btns{position:fixed;right:16px;bottom:10px;z-index:999;display:flex;flex-direction:row;gap:6px;}
+.float-btn{width:31px;height:31px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:8px;font-weight:600;text-align:center;line-height:1.2;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:all .2s;border:1px solid rgba(255,255,255,.5);}
+.float-btn-top{background:rgba(46,134,193,.75);color:#fff;}
+.float-btn-top:hover{background:rgba(46,134,193,1);transform:scale(1.08);}
+.float-btn-bottom{background:rgba(26,82,118,.75);color:#fff;}
+.float-btn-bottom:hover{background:rgba(26,82,118,1);transform:scale(1.08);}
+/* 云端同步 */
+.sync-indicator{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 10px;border-radius:12px;cursor:pointer;transition:all .15s;}
+.sync-indicator.local{background:#fef9e7;color:#f39c12;border:1px solid #f39c12;}
+.sync-indicator.cloud{background:#eafaf1;color:#27ae60;border:1px solid #27ae60;}
+.sync-indicator.syncing{background:#eaf2f8;color:#2e86c1;border:1px solid #2e86c1;}
+.sync-indicator.error{background:#fadbd8;color:#e74c3c;border:1px solid #e74c3c;}
+.sync-indicator:hover{opacity:.85;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sync-indicator.syncing .sync-dot{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync-config-box{width:560px;}
+.sync-config-box .form-group{margin-bottom:14px;}
+.sync-config-box .help-text{font-size:12px;color:#999;line-height:1.7;margin-top:4px;}
+.sync-config-box .help-text a{color:#2e86c1;}
+.sync-config-box .token-link{display:inline-block;margin-top:4px;padding:4px 12px;background:#eaf2f8;border:1px solid #2e86c1;border-radius:4px;color:#2e86c1;font-size:12px;cursor:pointer;}
+.sync-btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 12px;border-radius:12px;background:#eaf2f8;color:#2e86c1;border:1px solid #2e86c1;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.sync-btn:hover{background:#2e86c1;color:#fff;}
+.sync-btn:disabled{opacity:.5;cursor:not-allowed;}
+.sync-btn.syncing{background:#fef9e7;color:#f39c12;border-color:#f39c12;}
+</style>
+</head>
+<body>
+
+<!-- ===== 登录弹窗 ===== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-page-title">
+    <div class="lp-cn">客户管理系统</div>
+    <div class="lp-en">CHINA TELECOM · CRM</div>
+  </div>
+  <div class="login-box">
+    <div class="login-group">
+      <label>账号</label>
+      <input type="text" id="loginAccount" value="kaiping@gdct" placeholder="请输入账号" autocomplete="off">
+    </div>
+    <div class="login-group">
+      <label>密码</label>
+      <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="off">
+    </div>
+    <div class="login-error" id="loginError">账号或密码错误</div>
+    <button class="btn-login" onclick="doLogin()">登 录</button>
+    <div class="login-footer">中国电信TeleAgent生成</div>
+  </div>
+  <div class="login-bottom-text">涉及内部敏感数据，本系统仅本地安全环境使用，谨慎上传云端、服务器或其他数据库。</div>
+</div>
+
+<!-- ===== 固定顶部 ===== -->
+<div class="fixed-top" id="fixedTop">
+  <div class="top-bar">
+    <h1>客户管理系统</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="sync-indicator local" id="syncIndicator" onclick="openSyncConfig()" title="点击配置云端同步">
+        <span class="sync-dot"></span>
+        <span id="syncText">本地模式</span>
+      </span>
+      <button class="sync-btn" id="manualSyncBtn" onclick="manualSync()" title="立即拉取并推送云端数据" style="display:none;">
+        <span id="manualSyncText">手动同步</span>
+      </button>
+      <div class="datetime" id="datetime"></div>
+    </div>
+  </div>
+  <div class="link-bar" id="linkBar">
+    <span class="label">相关链接：</span>
+    <button class="add-link-btn" onclick="addLinkDialog()">+ 添加链接</button>
+  </div>
+  <div class="search-bar">
+    <select id="searchField" class="search-select" onchange="onSearch()">
+      <option value="any">任意条件</option>
+      <option value="yingfu">营服</option>
+      <option value="wuji">五级包区</option>
+      <option value="custName">客户名称</option>
+      <option value="custId">cust_id</option>
+      <option value="manager">客户经理</option>
+      <option value="repNum">代表号码</option>
+      <option value="custCode">客户编码</option>
+      <option value="payCode">缴费编码</option>
+    </select>
+    <select id="searchMode" class="search-select" onchange="onSearch()">
+      <option value="include">包含</option>
+      <option value="exclude">不包含</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="搜索关键词（多关键词用空格隔开，支持拼音）" oninput="onSearch()">
+    <button class="btn-reset" onclick="resetSearch()">重置</button>
+    <button class="btn-import" onclick="openImportModal()">导入</button>
+    <button class="btn-export" onclick="exportData()">导出</button>
+    <button class="btn-add" onclick="openModal('add')">+ 新增客户</button>
+    <button class="btn-batch-del" id="btnBatchDel" onclick="batchDelete()" style="display:none;">批量删除(<span id="batchCount">0</span>)</button>
+  </div>
+</div>
+
+<!-- ===== 表格主体 ===== -->
+<div class="table-container" id="tableContainer">
+  <div class="table-wrapper">
+    <div class="table-scroll" id="tableScroll">
+      <table id="mainTable">
+        <thead>
+          <tr id="tableHead"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- ===== 新增/编辑/查看 弹窗 ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">新增客户</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- 添加/编辑链接弹窗 -->
+<div class="modal-overlay" id="linkModalOverlay">
+  <div class="modal-box" style="width:480px;">
+    <div class="modal-header">
+      <h2 id="linkModalTitle">添加链接</h2>
+      <button class="modal-close" onclick="closeLinkModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>链接名称 <span class="required">*</span></label>
+        <input type="text" id="linkName" placeholder="如：内部系统、客户资料表">
+      </div>
+      <div class="form-group">
+        <label>网址或路径 <span class="required">*</span></label>
+        <input type="text" id="linkUrl" placeholder="输入网址或本地文件完整路径">
+        <div style="font-size:12px;color:#999;margin-top:6px;line-height:1.8;">
+          <div>网页完整地址示例：https://www.example.com</div>
+          <div>本地文件完整路径示例：C:\Users\Administrator\Downloads\客户资料.xlsx</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeLinkModal()">取消</button>
+      <button class="btn-save" id="linkSaveBtn" onclick="saveLink()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal-overlay" id="importModalOverlay">
+  <div class="modal-box" style="width:560px;">
+    <div class="modal-header">
+      <h2>导入客户数据</h2>
+      <button class="modal-close" onclick="closeImportModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <button class="import-template-btn" onclick="downloadTemplate()">下载导入模板</button>
+      <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
+        <div class="dz-icon">&#128193;</div>
+        <div class="dz-text">点击或拖动 Excel 文件到此处导入</div>
+        <div class="dz-hint">支持 .xlsx / .xls 格式</div>
+      </div>
+      <input type="file" id="importFileInput" class="file-input-hidden" accept=".xlsx,.xls">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeImportModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 备注查看弹窗 -->
+<div class="modal-overlay" id="remarkModalOverlay">
+  <div class="modal-box" style="width:620px;">
+    <div class="modal-header">
+      <h2 id="remarkModalTitle">备注</h2>
+      <button class="modal-close" onclick="closeRemarkModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="remarkModalBody" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeRemarkModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模块导入弹窗 -->
+<div class="modal-overlay" id="moduleImportOverlay">
+  <div class="modal-box" style="width:560px;">
+    <div class="modal-header">
+      <h2 id="moduleImportTitle">导入</h2>
+      <button class="modal-close" onclick="closeModuleImportModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <button class="import-template-btn" id="moduleTemplateBtn" onclick="downloadModuleTemplate()">下载导入模板</button>
+      <div class="import-drop-zone" id="moduleDropZone" onclick="document.getElementById('moduleFileInput').click()">
+        <div class="dz-icon">&#128193;</div>
+        <div class="dz-text">点击或拖动 Excel 文件到此处导入</div>
+        <div class="dz-hint">支持 .xlsx / .xls 格式</div>
+      </div>
+      <input type="file" id="moduleFileInput" class="file-input-hidden" accept=".xlsx,.xls">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModuleImportModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 悬浮按钮 -->
+<div class="float-btns">
+  <div class="float-btn float-btn-top" onclick="scrollTopBottom('top')" title="回到顶部">↑</div>
+  <div class="float-btn float-btn-bottom" onclick="scrollTopBottom('bottom')" title="滚动到底部">↓</div>
+</div>
+
+<!-- 云端同步配置弹窗 -->
+<div class="modal-overlay" id="syncConfigOverlay">
+  <div class="modal-box sync-config-box">
+    <div class="modal-header">
+      <h2>云端同步设置</h2>
+      <button class="modal-close" onclick="closeSyncConfig()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>GitHub 用户名 <span class="required">*</span></label>
+        <input type="text" id="syncOwner" placeholder="如：huangxiaoyu">
+        <div class="help-text">您的 GitHub 账号用户名</div>
+      </div>
+      <div class="form-group">
+        <label>仓库名称 <span class="required">*</span></label>
+        <input type="text" id="syncRepo" placeholder="如：kaiping-crm-data">
+        <div class="help-text">用于存放客户档案数据的仓库（需为公开仓库）</div>
+      </div>
+      <div class="form-group">
+        <label>分支名称</label>
+        <input type="text" id="syncBranch" placeholder="main" value="main">
+        <div class="help-text">默认为 main 分支</div>
+      </div>
+      <div class="form-group">
+        <label>数据文件路径</label>
+        <input type="text" id="syncFilePath" placeholder="data/customers.json" value="data/customers.json">
+        <div class="help-text">JSON 数据文件在仓库中的路径</div>
+      </div>
+      <div class="form-group">
+        <label>GitHub Token <span class="required">*</span></label>
+        <input type="password" id="syncToken" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="help-text">需要 repo 权限的 Personal Access Token</div>
+        <a class="token-link" href="https://github.com/settings/tokens/new?scopes=repo&description=kaiping-crm" target="_blank">点击此处创建 Token</a>
+      </div>
+      <div class="form-group">
+        <label>自动同步间隔（秒）</label>
+        <input type="number" id="syncInterval" value="30" min="10" max="300">
+        <div class="help-text">每隔多少秒自动从云端拉取最新数据（10-300）</div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px;margin-top:16px;font-size:12px;color:#666;line-height:1.8;">
+        <strong style="color:#1a5276;">使用说明：</strong><br>
+        1. 在 GitHub 创建一个公开仓库<br>
+        2. 点击上方链接创建 Token（勾选 repo 权限）<br>
+        3. 填写信息后点击"保存并连接"<br>
+        4. 将此 HTML 文件分享给同事，他们填写相同的配置即可<br>
+        5. 所有人的修改会自动同步到云端，其他人定时拉取<br>
+        <strong style="color:#e74c3c;">注意：</strong>Token 仅保存在本地浏览器中，不会上传
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSyncConfig()">取消</button>
+      <button class="btn-cancel" onclick="disconnectCloud()" style="background:#fadbd8;color:#e74c3c;">断开云端</button>
+      <button class="btn-save" onclick="saveSyncConfig()">保存并连接</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 拼音字典 ====================
+var PINYIN_DICT = {
+"a":"阿啊呵嗄吖啊阿阿","ai":"爱埃艾挨碍癌呆挨唉哀哎","an":"安案按岸暗氨俺鞍谙鹌埯揞犴","ang":"昂盎","ao":"奥澳傲熬袄凹拗嗷岙廒骜獒聱","ba":"八吧把爸罢拔巴霸芭靶疤跋钵吧把爸","bai":"白百摆败拜柏佰稗","ban":"办半班般版搬伴板扮颁扮扮","bang":"帮邦榜膀绑棒磅镑傍","bao":"报保包抱暴宝爆胞薄苞饱堡雹鲍","bei":"北倍备背杯被辈悲碑卑钡惫蓓鹎","ben":"本苯奔笨畚坌","beng":"崩绷绷泵蹦迸","bi":"比必笔毕币避闭辟壁彼逼臂碧鼻弊蔽毙毙鄙佛拂","bian":"变便边编遍辩鞭辨贬扁卞弁苄","biao":"表标彪婊骠飚膘镳","bie":"别瘪憋鳖","bin":"宾滨彬缤殡膑濒髌","bing":"并病兵冰丙秉柄炳禀","bo":"波播伯泊博勃驳剥薄礴帛舶脖膊礴","bu":"不步部补布卜哺簿埠怖","ca":"擦嚓礤","cai":"才采菜材财裁踩彩睬","can":"参残餐惨灿蚕仓孺璨","cang":"仓苍藏沧","cao":"操草槽糙","ce":"策侧测厕册侧","ceng":"层蹭曾","cha":"查察叉差插刹茶岔茬诧碴搽","chai":"拆柴钗侪虿","chan":"产铲缠颤搀禅蝉馋掺潺蟾","chang":"长场常厂唱偿畅肠昌倡猖尝敞怅","chao":"超抄朝吵潮巢炒钞绰","che":"车彻撤澈掣","chen":"陈臣沉辰晨尘晨沉称趁衬郴橙谌","cheng":"成程城承乘称橙惩澄秤逞骋","chi":"吃尺迟池迟赤翅匙痴耻驰斥墀","chong":"冲充虫崇宠重涌舂","chou":"抽愁丑臭仇畴稠筹酬绸瞅","chu":"出处除楚触储橱矗搐亍刍憷","chuan":"传川穿船喘串椽钏","chuang":"创床窗闯疮幢","chui":"吹垂炊锤捶","chun":"春纯蠢醇唇淳","chuo":"戳辍龊绰","ci":"此次词次刺辞磁瓷慈茨雌祠鹚","cong":"从匆聪葱囱琮从","cou":"凑腠","cu":"粗促醋簇蹙蹴","cuan":"窜蹿篡蹿","cui":"催崔摧脆萃翠淬粹瘁","cun":"村存寸忖","cuo":"措错搓挫措撮厝","da":"大打达搭答瘩嗒褡","dai":"代带待戴袋逮怠殆岱迨贷","dan":"单担但蛋弹旦胆丹诞啖殚惮瘅箪","dang":"当党挡档荡档","dao":"到道倒导岛刀悼盗稻祷捣蹈帱","de":"的得德锝","dei":"得","deng":"等登灯邓凳瞪蹬","di":"的地第低底敌滴弟递堤帝迪涤笛狄嫡诋邸砥坻","dian":"电点店典奠殿电掂滇碘踮","diao":"掉调钓雕吊叼凋碉铞","die":"跌叠爹蝶蝶谍碟叠迭垤佚","ding":"定订顶丁鼎钉锭叮铤","diu":"丢铥","dong":"东动洞冬懂栋董咚咚侗","dou":"都斗豆抖逗兜陡蔸","du":"度独都毒读督堵杜睹赌嘟","duan":"段断短端缎锻椴","dui":"队对堆兑怼憝","dun":"吨顿盾蹲敦墩遁盹砘","duo":"多夺朵躲哆舵堕踱掇","e":"饿额恶俄厄峨鹅蛾鳄遏呃谔垩","en":"恩嗯蒽","er":"而二尔耳儿饵洱珥","fa":"发法罚乏伐阀珐筏","fan":"反烦凡犯繁饭返范泛番藩帆樊矾贩","fang":"方放房防访仿纺芳坊妨肪鲂","fei":"非费飞废肥匪啡沸菲翡蜚","fen":"分份粉纷奋氛芬愤粪坟汾焚酚","feng":"风封峰丰逢锋蜂凤奉缝讽讽烽俸","fo":"佛","fou":"否缶","fu":"服府父附符腐肤浮覆抚辅幅福负富复赴赋腹妇甫敷斧伏釜俘孚敷","ga":"噶嘎噶尕","gai":"该改概盖溉钙丐尬","gan":"干感敢杆肝甘赶秆柑赣乾矸","gang":"岗刚钢纲港杠缸罡扛","gao":"高告搞稿糕膏羔睾诰郜","ge":"个各革格歌哥盖隔割阁搁戈鸽胳疙骼葛","gei":"给","gen":"根跟亘哏","geng":"更耕梗耿","gong":"工公共功攻供宫弓贡巩龚拱肱","gou":"够构购勾狗沟钩苟够垢岿枸篝","gu":"股古顾故骨估鼓孤固定股谷贾雇","guan":"关观管官馆观贯冠灌罐惯冠盥","guang":"光广逛犷桄","gui":"贵规鬼桂归柜跪硅圭龟瑰轨","gun":"滚棍衮","guo":"国过果锅裹帼郭聒蝈","ha":"哈蛤铪","hai":"海还害孩骇嗨","han":"含寒韩喊汉翰旱憾函涵罕汗邯","hang":"行航杭行珩","hao":"好号浩耗豪毫郝嚎皓","he":"和合河喝赫贺何荷核盒涸阂嗬","hei":"黑嘿","hen":"很恨痕狠","heng":"横恒哼珩","hong":"红洪宏弘哄烘虹鸿弘","hou":"后候厚侯喉吼猴堠后","hu":"护互户呼湖糊壶虎忽瑚惚唬护","hua":"化话花华划画滑哗豁","huai":"坏怀槐徊淮","huan":"还环换欢缓幻患焕桓浣豢漶","huang":"黄荒晃皇煌凰惶慌簧磺蝗","hui":"会回灰汇惠毁挥辉徽恢贿蛔晦讳诲诙","hun":"混婚魂昏浑荤浑","huo":"活火或货获祸惑霍豁藿锪镬攉","ji":"机其记及级即几给积机击鸡剂集基际济技击急击既记纪计寄忌妓挤积稽稽饥肌激讥讥迹","jia":"家加价假佳嘉甲夹贾钾嫁稼驾架枷伽镓","jian":"见间件建检健减简煎肩坚兼监键剑奸荐渐鉴柬践涧拣捡检笺箭剪舰鉴饯","jiang":"江将讲奖降蒋匠浆僵桨疆姜缰犟匠","jiao":"教交叫较脚角搅缴轿娇骄焦胶郊浇椒礁鹪","jie":"解结接节价界借介届阶街姐戒截洁竭诫芥揭借","jin":"金进今近紧禁仅尽劲晋浸筋襟斤巾金津","jing":"经精京警景静竞境井惊敬劲径茎镜颈痉","jiong":"窘炯迥","jiu":"就九久旧救纠舅咎韭厩鸠鹫揪","ju":"举局据居具句聚巨距拒俱菊矩锯剧炬咀沮","juan":"卷捐圈倦娟眷涓鹃镌","jue":"决绝觉角掘诀厥蕨倔爵嚼攫","jun":"军均君俊菌竣浚峻骏","ka":"卡咖喀咯","kai":"开凯慨揩楷","kan":"看刊勘堪坎侃槛","kang":"抗扛康慷亢炕","kao":"考靠烤拷栲铐","ke":"可课克客科颗刻渴壳柯棵咳磕苛坷蝌咳","ken":"肯垦恳啃裉","keng":"坑铿","kong":"空恐控孔空白","kou":"口扣寇抠蔻","ku":"苦库哭裤枯酷窟","kua":"跨夸垮挎胯","kuai":"快块会筷侩蒯郐","kuan":"款宽髋","kuang":"狂矿况筐眶旷","kui":"亏溃馈愧窥葵窥","kun":"困昆捆坤","kuo":"扩括阔廓","la":"拉啦辣蜡腊垃喇","lai":"来赖癞籁涞睐","lan":"蓝篮览拦兰烂烂懒阑谰褴","lang":"浪郎朗狼廊榔琅","lao":"老劳牢捞佬姥烙涝唠崂铹","le":"了乐勒肋叻鳓","lei":"类雷累泪蕾垒擂磊","leng":"冷愣棱","li":"里理力立利李历例离礼厉励丽沥俪莉痢蛎荔栗犁黎篱","lia":"俩","lian":"连联练脸莲廉怜恋链帘镰涟裢裣","liang":"两量亮凉粮梁辆良晾踉谅墚","liao":"了料疗撩聊僚辽燎嘹潦镣","lie":"列烈劣猎裂咧裂冽烈捩","lin":"林临邻磷淋麟霖鳞遴吝蔺","ling":"领另零灵龄陵岭凌玲铃菱羚翎绫瓴","liu":"六留流刘柳瘤溜琉榴硫","long":"龙隆笼拢聋弄陇垄胧窿","lou":"楼搂漏陋娄露篓漏镂","lu":"路录六陆绿炉虑鲁露虏卢芦庐颅泸渌漉","lv":"绿铝旅律吕履氯缕","luan":"乱卵滦銮","lue":"略掠锊","lun":"论轮伦沦纶","luo":"落罗螺洛锣萝骆裸络洛","ma":"马吗妈麻骂码蚂犸嬷","mai":"买卖麦脉埋霾","man":"满慢蛮瞒馒漫蔓鳗颟墁","mang":"忙盲茫芒硷","mao":"毛贸茂茅猫帽冒卯耄","me":"么麽","mei":"没美每妹煤霉梅枚媒媚玫莓寐酶","men":"们门闷扪钔","meng":"梦猛蒙盟萌朦檬礞瞢","mi":"米密迷蜜谜弥糜靡咪咪眯","mian":"面棉免勉缅眠冕渑腼","miao":"秒苗描妙庙藐邈喵鹋","mao":"毛冒茂貌贸帽","miao":"苗秒妙描淼渺缈喵","mie":"灭蔑篾乜","min":"民敏闽悯泯抿珉","ming":"明名命鸣铭冥茗溟瞑","miu":"谬缪","mo":"摸末莫磨魔沫摸漠陌墨默膜摹摸蓦貊瘼","mou":"某谋牟侔眸","mu":"母目模亩幕木暮牧慕姆牡募沐睦钼","na":"拿哪那钠纳南呐捺","nai":"乃奶耐奈氖乃迺萘","nan":"南难男喃楠","nang":"囊馕囔","nao":"脑闹挠恼瑙呶淖","ne":"呢讷","nei":"内馁","nen":"嫩","neng":"能","ni":"你尼泥逆拟溺腻霓倪","nian":"年念粘碾捻酿撵拈蔫鲶","niang":"娘酿","niao":"尿鸟溺袅脲","nie":"捏聂涅啮镊孽蹑蘖","nin":"您","ning":"宁凝拧泞柠咛","niu":"牛扭纽纽扭钮","nong":"农弄浓侬脓","nou":"耨","nu":"努奴怒","nv":"女","nuan":"暖","nue":"虐疟","nuo":"挪诺糯懦","o":"哦噢","ou":"欧偶呕鸥藕","pa":"怕爬趴扒帕琶","pai":"排拍派牌徘湃","pan":"盘判攀盼叛畔磐蹒蟠","pang":"旁胖庞磅彷庞","pao":"跑炮泡刨袍咆疱","pei":"配陪培赔佩裴沛辔帔","pen":"喷盆","peng":"碰朋棚蓬鹏澎捧朋篷","pi":"皮批坏辟匹劈疲披坏辟僻屁譬丕坯霹","pian":"片偏骗篇翩扁骈","piao":"票漂飘飘瓢剽嫖瞟","pie":"撇瞥撇","pin":"品拼贫频聘嫔","ping":"平评苹凭瓶屏萍乒坪苹","po":"破颇泼坡婆迫魄粕颇叵","pou":"剖掊","pu":"普铺朴谱菩蒲葡扑仆铺瀑","qi":"其期起气七企妻齐棋奇骑歧欺旗祈祁骑齐齐契讫迄亓圻岐","qia":"卡恰洽掐","qian":"前钱千浅签谦牵潜遣谴歉嵌钳虔","qiang":"强枪墙腔抢呛羌戕襁镪","qiao":"桥瞧巧悄敲翘乔侨俏窍诮础硗锹劁","qie":"切且窃茄怯惬妾","qin":"亲勤秦琴侵寝禽芩芹衾嗪揿","qing":"情清请青轻晴庆顷氢倾卿擎磬黉罄","qiong":"穷琼穹茕","qiu":"求球秋丘酋囚遒虬蝤","qu":"去区取曲趋渠趣驱屈躯瞿觑龋","quan":"全权劝圈券泉拳犬诠荃醛鬈","que":"确缺却雀鹊阙炔榷","qun":"群裙逡","ran":"然燃染冉","rang":"让壤攘嚷禳","rao":"绕饶扰荛","re":"热惹喏","ren":"人任认忍仁刃韧纫饪妊","reng":"仍扔","ri":"日","rong":"容荣融绒溶熔蓉榕戎嵘蝾","rou":"肉柔揉糅蹂","ru":"入如儒乳辱乳汝褥","ruan":"软阮","rui":"锐瑞睿蕊芮蚋","run":"润闰","ruo":"若弱偌","sa":"撒洒萨仨","sai":"赛塞思腮噻","san":"三散伞叁","sang":"桑丧嗓搡磉","sao":"扫骚嫂搔臊缫","se":"色塞涩瑟啬","sen":"森","seng":"僧","sha":"杀沙傻刹纱煞杉鲨嗄霎","shai":"筛晒","shan":"山闪善扇陕掺杉删珊膳擅赡擅","shang":"上商伤尚赏商裳殇熵绱","shao":"少烧稍绍勺哨梢芍邵韶劭","she":"设社射涉摄折蛇奢赊麝","shei":"谁","shen":"身深神什审慎甚申伸沈婶肾绅呻","sheng":"生声胜升盛剩省牲绳甥嵊笙","shi":"是时事十使十师诗失十实识十石史使始世市试试十","shou":"手受收寿售守兽狩首绶","shu":"书树数熟属述输束鼠术署蜀薯梳叔抒枢","shua":"刷耍唰","shuai":"帅率衰摔甩甩","shuan":"栓拴拴","shuang":"双爽霜孀","shui":"水税睡说谁","shun":"顺瞬舜","shuo":"说硕烁朔","si":"四思私丝司死似撕斯肆嘶巳厮","song":"送松宋颂讼诵嵩淞","sou":"搜艘嗖嗽叟馊","su":"速素苏诉塑肃俗宿粟酥夙","suan":"算酸蒜","sui":"岁虽随碎髓遂穗隋绥","sun":"孙损笋荪狲榫","suo":"所锁缩索唆梭娑嗦嗍","ta":"他它她塔踏榻獭鳎沓","tai":"太台态胎抬泰苔肽钛","tan":"谈弹坦贪摊滩瘫昙谭志碳矾","tang":"堂糖躺烫塘汤唐膛棠搪镗趟","tao":"套逃桃讨陶涛掏萄滔","te":"特忒忑","teng":"疼腾藤誊滕","ti":"体提题替踢梯蹄剔啼剃屉","tian":"天田填甜恬舔忝阗","tiao":"条跳挑调佻跳迢","tie":"铁贴帖谍","ting":"听停厅庭挺艇亭廷汀","tong":"通同统痛童铜桶筒桐瞳佟","tou":"投头透偷头","tu":"图土突涂秃途屠荼","tuan":"团湍抟","tui":"退腿推蜕颓褪","tun":"吞屯囤臀氽","tuo":"拖脱托妥拓驼坨鸵沲柝","wa":"挖瓦娃袜洼蛙","wai":"外歪崴","wan":"完万弯晚碗弯湾玩顽腕宛婉莞菀","wang":"王往网忘望旺汪枉妄","wei":"为位委维卫未伟谓喂胃味围魏危尾微伪蔚","wen":"问文温稳吻闻蚊纹瘟雯","weng":"翁嗡瓮蓊","wo":"我握沃窝卧蜗倭渥","wu":"五无物务武误吴午五屋污悟吾芜捂巫诬伍戊","xi":"西系希息洗细喜习吸析席夕悉戏稀溪锡膝晰熙烯","xia":"下夏吓峡霞虾侠辖遐瑕匣瞎","xian":"现线先限险显闲鲜纤咸贤衔掀仙馅腺","xiang":"想向项相象详响享巷橡香乡箱像镶湘襄骧缃","xiao":"小笑销消效校晓销宵肖孝萧硝霄淆骁潇潇","xie":"写些协鞋斜泄泻谢胁卸懈叶歇屑械血蝎谐携","xin":"新心信欣辛薪锌馨昕忻","xing":"行性兴型星形幸醒姓腥刑邢杏猩悻","xiong":"兄雄凶胸熊匈汹芎","xiu":"修秀休袖锈嗅绣羞朽宿馐溴","xu":"许需续序虚徐休蓄叙旭邪絮恤墟栩","xuan":"选宣旋悬轩喧玄炫眩萱漩渲","xue":"学雪血削穴靴薛谑","xun":"寻训迅讯巡循旬询勋驯熏浚殉汛徇","ya":"呀压牙押鸦鸭亚哑芽崖涯雅压亚迓垭","yan":"研眼烟延言验严炎掩宴衍燕厌沿岩延焰焉阉偃奄","yang":"样央洋养羊阳氧仰痒杨秧殃扬疡","yao":"要药遥摇 Yao 要咬邀腰遥谣窑姚舀夭疟肴","ye":"也业夜叶野液页爷耶冶噎谒邺","yi":"一以已意义医易亿移艺议益异仪遗疑毅亦役忆依谊肄疫亦","yin":"因银引音印隐寅饮淫阴荫茵瘾","ying":"应英营影硬映迎赢蝇鹰膺樱瑛鹦颍","yong":"用永拥勇涌咏庸永咏蛹踊俑","you":"有由又油游右友优幼幽悠尤邮铀酉鱿","yu":"于与于予余预育鱼语遇裕雨玉余欲愈渔郁愚虞娱","yuan":"员原元远院园圆愿源猿渊袁辕圆垣援","yue":"月约越乐跃岳粤悦阅钥钺跃","yun":"运云允韵蕴酝晕匀芸郧","za":"杂砸咋咱","zai":"在再灾载栽宰仔哉","zan":"咱赞暂攒錾","zang":"脏藏葬臧","zao":"早造遭糟灶噪燥藻皂凿","ze":"责则泽择泽泽","zei":"贼","zen":"怎","zeng":"增综赠憎曾锃","zha":"炸扎闸渣札眨咋诈","zhai":"宅择窄寨债斋","zhan":"展站占战颤沾盏斩辗崭瞻","zhang":"长张章掌涨障帐仗丈胀彰","zhao":"找照招召着朝赵兆爪罩沼肇","zhe":"这者着折哲浙遮折辙","zhen":"真镇阵震珍诊枕侦贞针斟祯桢","zheng":"正整证政争征郑症蒸挣睁峥铮筝","zhi":"之只制直至制质知治志值职支植止织纸指致执植","zhong":"中种重众终钟忠仲衷肿踵","zhou":"周州洲宙轴皱咒昼骤粥绐","zhu":"主住注助逐筑祝驻柱猪株朱诸诛煮烛瞩嘱","zhua":"抓拽挝","zhuai":"拽","zhuan":"转专赚砖撰传馔","zhuang":"装状撞壮妆桩奘","zhui":"追坠缀赘椎锥","zhun":"准","zhuo":"捉桌浊酌琢茁啄镯灼浊斫擢","zi":"子自资字姊紫滋仔籽兹咨梓渍姿","zong":"总从综棕踪鬃粽","zou":"走奏揍邹陬","zu":"组族足祖租阻足卒","zuan":"钻纂攥","zui":"最罪嘴醉咀","zun":"尊遵樽","zuo":"做作左坐昨佐凿琢琢怍","zu":"组族足祖租阻卒"
+};
+var FULL_PINYIN_MAP = (function(){
+  var map = {};
+  for (var py in PINYIN_DICT) {
+    if (!PINYIN_DICT.hasOwnProperty(py)) continue;
+    var chars = PINYIN_DICT[py];
+    for (var i = 0; i < chars.length; i++) {
+      var ch = chars[i];
+      if (!map[ch]) map[ch] = py;
+    }
+  }
+  return map;
+})();
+
+function getFullPinyin(str) {
+  var result = '';
+  for (var i = 0; i < str.length; i++) {
+    var ch = str[i];
+    if (FULL_PINYIN_MAP[ch]) {
+      result += FULL_PINYIN_MAP[ch];
+    } else if (/[\u4e00-\u9fa5]/.test(ch)) {
+      // 没有拼音映射的字，保留原字符
+      result += ch;
+    } else {
+      // 非中文字符，保留原样
+      result += ch;
+    }
+  }
+  return result;
+}
+
+function getFirstLetters(str) {
+  var result = '';
+  for (var i = 0; i < str.length; i++) {
+    var ch = str[i];
+    if (FULL_PINYIN_MAP[ch]) {
+      result += FULL_PINYIN_MAP[ch][0];
+    } else if (/[a-zA-Z0-9]/.test(ch)) {
+      result += ch.toLowerCase();
+    }
+  }
+  return result;
+}
+
+// ==================== 数据存储 ====================
+var STORAGE_KEY = 'kaiping_crm_v2';
+var LINK_STORAGE_KEY = 'kaiping_crm_links_v2';
+var SYNC_CONFIG_KEY = 'kaiping_crm_sync_config';
+var customers = [];
+var links = [];
+var currentPage = 1;
+var pageSize = 1000;
+var sortColumn = null;
+var sortDir = 1;
+var filteredData = null;
+var modulePageInfo = {}; // 每个多行模块的分页信息 {tbodyId:{page:1,size:5}}
+
+// ==================== 云端同步 ====================
+var syncConfig = null;
+var syncTimer = null;
+var isSyncing = false;
+var isManualSyncing = false;
+var lastCloudSha = null; // 云端文件的最新 sha，用于推送和冲突检测
+var lastPushTime = 0;
+
+function loadSyncConfig() {
+  var saved = localStorage.getItem(SYNC_CONFIG_KEY);
+  if (saved) {
+    try { syncConfig = JSON.parse(saved); } catch(e) { syncConfig = null; }
+  }
+}
+
+function saveSyncConfigToStorage() {
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(syncConfig));
+}
+
+function isCloudEnabled() {
+  return syncConfig && syncConfig.owner && syncConfig.repo && syncConfig.token;
+}
+
+function updateSyncIndicator(state, text) {
+  var el = document.getElementById('syncIndicator');
+  var txt = document.getElementById('syncText');
+  if (!el) return;
+  el.className = 'sync-indicator ' + state;
+  if (text) txt.textContent = text;
+}
+
+// Base64 编码（支持中文）
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+// Base64 解码（支持中文）
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64)));
+}
+// 判断字符串是否为乱码（含Latin-1高区字符但无正常中文）
+function isMojibake(str) {
+  if (typeof str !== 'string' || !str) return false;
+  // 已含正常中文，不是乱码
+  if (/[\u4e00-\u9fff]/.test(str)) return false;
+  // 含Latin-1高区字符（乱码的典型特征）
+  if (/[\u00c0-\u00ff]/.test(str)) return true;
+  return false;
+}
+// 尝试修复乱码文本（多级尝试）
+function fixEncoding(str) {
+  if (typeof str !== 'string' || !str) return str;
+  if (!isMojibake(str)) return str;
+  // 尝试1：escape/unescape
+  try {
+    var fixed = decodeURIComponent(escape(str));
+    if (/[\u4e00-\u9fff]/.test(fixed)) return fixed;
+  } catch(e) {}
+  // 尝试2：直接按UTF-8字节读取
+  try {
+    var bytes = [];
+    for (var i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 0xff);
+    var fixed2 = decodeURIComponent(escape(String.fromCharCode.apply(null, bytes)));
+    if (/[\u4e00-\u9fff]/.test(fixed2)) return fixed2;
+  } catch(e) {}
+  return str;
+}
+// 递归修复数据对象中所有字符串字段的乱码
+function repairObject(obj) {
+  if (Array.isArray(obj)) {
+    obj.forEach(function(item) { repairObject(item); });
+  } else if (obj && typeof obj === 'object') {
+    for (var key in obj) {
+      if (typeof obj[key] === 'string') {
+        obj[key] = fixEncoding(obj[key]);
+      } else {
+        repairObject(obj[key]);
+      }
+    }
+  }
+  return obj;
+}
+// 检查数据对象中是否有乱码
+function hasMojibake(obj) {
+  if (typeof obj === 'string') return isMojibake(obj);
+  if (Array.isArray(obj)) {
+    for (var i = 0; i < obj.length; i++) { if (hasMojibake(obj[i])) return true; }
+  } else if (obj && typeof obj === 'object') {
+    for (var key in obj) { if (hasMojibake(obj[key])) return true; }
+  }
+  return false;
+}
+
+// 构建GitHub API URL
+function getApiUrl(path) {
+  return 'https://api.github.com/repos/' + syncConfig.owner + '/' + syncConfig.repo + '/contents/' + encodeURIComponent(path) + '?ref=' + (syncConfig.branch || 'main');
+}
+
+// 从云端拉取数据
+function pullFromCloud(callback) {
+  if (!isCloudEnabled()) { if (callback) callback(false); return; }
+  isSyncing = true;
+  updateSyncIndicator('syncing', '同步中...');
+  var url = getApiUrl(syncConfig.filePath || 'data/customers.json');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Authorization', 'token ' + syncConfig.token);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    isSyncing = false;
+    if (xhr.status === 200) {
+      try {
+        var resp = JSON.parse(xhr.responseText);
+        lastCloudSha = resp.sha;
+        var content = base64ToUtf8(resp.content.replace(/\n/g, ''));
+          var data = JSON.parse(content);
+          if (data && data.customers) {
+            // 检测云端数据是否有乱码
+            var cloudHadMojibake = hasMojibake(data.customers) || hasMojibake(data.links);
+            customers = data.customers;
+            if (data.links) links = data.links;
+            // 修复可能的历史乱码数据
+            repairObject(customers);
+            repairObject(links);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+            localStorage.setItem(LINK_STORAGE_KEY, JSON.stringify(links));
+            updateSyncIndicator('cloud', '云端已同步');
+            // 如果云端数据有乱码且修复成功，推送修正后的数据到云端
+            if (cloudHadMojibake) {
+              var saveOld = isSyncing; isSyncing = false;
+              pushToCloud(function() {
+                updateSyncIndicator('cloud', '云端已同步(乱码已修复)');
+              });
+              isSyncing = saveOld;
+            }
+            if (callback) callback(true);
+        } else {
+          updateSyncIndicator('error', '云端数据格式错误');
+          if (callback) callback(false);
+        }
+      } catch(e) {
+        updateSyncIndicator('error', '解析失败');
+        if (callback) callback(false);
+      }
+    } else if (xhr.status === 404) {
+      // 文件不存在或仓库不存在，首次使用
+      lastCloudSha = null;
+      updateSyncIndicator('syncing', '仓库或文件不存在，正在尝试初始化...');
+      if (callback) callback(true);
+    } else if (xhr.status === 401) {
+      updateSyncIndicator('error', 'Token无效或已过期，请重新创建Token');
+      if (callback) callback(false);
+    } else if (xhr.status === 403) {
+      updateSyncIndicator('error', '无访问权限，请确认Token有repo权限且仓库为公开');
+      if (callback) callback(false);
+    } else {
+      var errMsg = '拉取失败(' + xhr.status + ')';
+      try { var errResp = JSON.parse(xhr.responseText); if (errResp.message) errMsg += '：' + errResp.message; } catch(e) {}
+      updateSyncIndicator('error', errMsg);
+      if (callback) callback(false);
+    }
+  };
+  xhr.onerror = function() {
+    isSyncing = false;
+    updateSyncIndicator('error', '网络连接失败，请检查网络是否能访问github.com');
+    if (callback) callback(false);
+  };
+  xhr.ontimeout = function() {
+    isSyncing = false;
+    updateSyncIndicator('error', '连接超时，请检查网络');
+    if (callback) callback(false);
+  };
+  xhr.timeout = 30000;
+  xhr.send();
+}
+
+// 推送数据到云端
+function pushToCloud(callback) {
+  if (!isCloudEnabled()) { if (callback) callback(false); return; }
+  isSyncing = true;
+  updateSyncIndicator('syncing', '推送中...');
+  var url = getApiUrl(syncConfig.filePath || 'data/customers.json');
+  var payload = {
+    customers: customers,
+    links: links,
+    updatedAt: new Date().toISOString(),
+    updatedBy: syncConfig.owner || 'unknown'
+  };
+  var content = utf8ToBase64(JSON.stringify(payload));
+  var body = {
+    message: '更新客户档案 ' + new Date().toLocaleString('zh-CN'),
+    content: content,
+    branch: syncConfig.branch || 'main'
+  };
+  if (lastCloudSha) body.sha = lastCloudSha;
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', url, true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Authorization', 'token ' + syncConfig.token);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    isSyncing = false;
+    if (xhr.status === 200 || xhr.status === 201) {
+      try { var resp = JSON.parse(xhr.responseText); lastCloudSha = resp.content.sha; } catch(e) {}
+      lastPushTime = Date.now();
+      updateSyncIndicator('cloud', '云端已同步');
+      if (callback) callback(true);
+    } else if (xhr.status === 409) {
+      // 冲突：云端有更新，先拉取
+      updateSyncIndicator('error', '数据冲突，正在同步...');
+      pullFromCloud(function() {
+        onSearch(); renderTableBody(); renderLinks();
+        if (callback) callback(false);
+      });
+    } else if (xhr.status === 401) {
+      updateSyncIndicator('error', 'Token无效或已过期，请重新创建Token');
+      if (callback) callback(false);
+    } else if (xhr.status === 403) {
+      updateSyncIndicator('error', '无写入权限，请确认Token有repo权限且仓库为公开');
+      if (callback) callback(false);
+    } else if (xhr.status === 404) {
+      updateSyncIndicator('error', '仓库不存在或路径无效，请检查用户名和仓库名');
+      if (callback) callback(false);
+    } else {
+      var errMsg = '推送失败(' + xhr.status + ')';
+      try { var errResp = JSON.parse(xhr.responseText); if (errResp.message) errMsg += '：' + errResp.message; } catch(e) {}
+      updateSyncIndicator('error', errMsg);
+      if (callback) callback(false);
+    }
+  };
+  xhr.onerror = function() {
+    isSyncing = false;
+    updateSyncIndicator('error', '网络连接失败，请检查网络是否能访问github.com');
+    if (callback) callback(false);
+  };
+  xhr.ontimeout = function() {
+    isSyncing = false;
+    updateSyncIndicator('error', '连接超时，请检查网络');
+    if (callback) callback(false);
+  };
+  xhr.timeout = 30000;
+  xhr.send(JSON.stringify(body));
+}
+
+// 启动定时轮询（自动同步，与手动同步互不影响）
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  if (!isCloudEnabled()) return;
+  var interval = (syncConfig.interval || 30) * 1000;
+  syncTimer = setInterval(function() {
+    if (isSyncing) return;
+    // 拉取云端最新数据
+    var prevSha = lastCloudSha;
+    pullFromCloud(function(ok) {
+      if (ok && lastCloudSha !== prevSha) {
+        // 云端有更新
+        onSearch(); renderTableBody(); renderLinks();
+      }
+    });
+  }, interval);
+}
+
+// 手动同步：立即拉取+推送，与自动同步互不影响
+function manualSync() {
+  if (!isCloudEnabled()) {
+    showToast('请先配置云端同步');
+    return;
+  }
+  if (isManualSyncing) return;
+  isManualSyncing = true;
+  var btn = document.getElementById('manualSyncBtn');
+  var txt = document.getElementById('manualSyncText');
+  btn.classList.add('syncing');
+  btn.disabled = true;
+  txt.textContent = '同步中...';
+  // 先拉取云端最新数据
+  pullFromCloudManual(function(ok) {
+    if (ok) {
+      onSearch(); renderTableBody(); renderLinks();
+      // 再推送本地数据到云端
+      pushToCloudManual(function(ok2) {
+        isManualSyncing = false;
+        btn.classList.remove('syncing');
+        btn.disabled = false;
+        txt.textContent = '手动同步';
+        if (ok2) showToast('手动同步完成');
+      });
+    } else {
+      isManualSyncing = false;
+      btn.classList.remove('syncing');
+      btn.disabled = false;
+      txt.textContent = '手动同步';
+      showToast('同步失败，请查看右上角提示');
+    }
+  });
+}
+
+// 手动拉取（不影响自动同步的 isSyncing 标志）
+function pullFromCloudManual(callback) {
+  var url = getApiUrl(syncConfig.filePath || 'data/customers.json');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Authorization', 'token ' + syncConfig.token);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status === 200) {
+      try {
+        var resp = JSON.parse(xhr.responseText);
+        lastCloudSha = resp.sha;
+        var content = base64ToUtf8(resp.content.replace(/\n/g, ''));
+        var data = JSON.parse(content);
+        if (data && data.customers) {
+          var cloudHadMojibake = hasMojibake(data.customers) || hasMojibake(data.links);
+          customers = data.customers;
+          if (data.links) links = data.links;
+          repairObject(customers);
+          repairObject(links);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+          localStorage.setItem(LINK_STORAGE_KEY, JSON.stringify(links));
+          if (cloudHadMojibake) {
+            pushToCloudManual(function(){});
+          }
+          if (callback) callback(true);
+        } else {
+          showToast('云端数据格式错误');
+          if (callback) callback(false);
+        }
+      } catch(e) {
+        showToast('解析失败：' + e.message);
+        if (callback) callback(false);
+      }
+    } else if (xhr.status === 404) {
+      lastCloudSha = null;
+      if (callback) callback(true);
+    } else if (xhr.status === 401) {
+      showToast('Token无效或已过期');
+      updateSyncIndicator('error', 'Token无效或已过期，请重新创建Token');
+      if (callback) callback(false);
+    } else if (xhr.status === 403) {
+      showToast('无访问权限');
+      updateSyncIndicator('error', '无访问权限，请确认Token有repo权限且仓库为公开');
+      if (callback) callback(false);
+    } else {
+      showToast('拉取失败(' + xhr.status + ')');
+      if (callback) callback(false);
+    }
+  };
+  xhr.onerror = function() {
+    showToast('网络连接失败');
+    if (callback) callback(false);
+  };
+  xhr.ontimeout = function() {
+    showToast('连接超时');
+    if (callback) callback(false);
+  };
+  xhr.timeout = 30000;
+  xhr.send();
+}
+
+// 手动推送（不影响自动同步的 isSyncing 标志）
+function pushToCloudManual(callback) {
+  var url = getApiUrl(syncConfig.filePath || 'data/customers.json');
+  var payload = {
+    customers: customers,
+    links: links,
+    updatedAt: new Date().toISOString(),
+    updatedBy: syncConfig.owner || 'unknown'
+  };
+  var content = utf8ToBase64(JSON.stringify(payload));
+  var body = {
+    message: '手动同步 ' + new Date().toLocaleString('zh-CN'),
+    content: content,
+    branch: syncConfig.branch || 'main'
+  };
+  if (lastCloudSha) body.sha = lastCloudSha;
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', url, true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Authorization', 'token ' + syncConfig.token);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status === 200 || xhr.status === 201) {
+      try { var resp = JSON.parse(xhr.responseText); lastCloudSha = resp.content.sha; } catch(e) {}
+      lastPushTime = Date.now();
+      updateSyncIndicator('cloud', '云端已同步');
+      if (callback) callback(true);
+    } else if (xhr.status === 409) {
+      // 冲突：重新拉取
+      pullFromCloudManual(function() {
+        onSearch(); renderTableBody(); renderLinks();
+        if (callback) callback(false);
+      });
+    } else if (xhr.status === 401) {
+      updateSyncIndicator('error', 'Token无效或已过期，请重新创建Token');
+      if (callback) callback(false);
+    } else if (xhr.status === 403) {
+      updateSyncIndicator('error', '无写入权限，请确认Token有repo权限且仓库为公开');
+      if (callback) callback(false);
+    } else if (xhr.status === 404) {
+      updateSyncIndicator('error', '仓库不存在或路径无效，请检查用户名和仓库名');
+      if (callback) callback(false);
+    } else {
+      var errMsg = '推送失败(' + xhr.status + ')';
+      try { var errResp = JSON.parse(xhr.responseText); if (errResp.message) errMsg += '：' + errResp.message; } catch(e) {}
+      updateSyncIndicator('error', errMsg);
+      if (callback) callback(false);
+    }
+  };
+  xhr.onerror = function() {
+    showToast('网络连接失败');
+    if (callback) callback(false);
+  };
+  xhr.ontimeout = function() {
+    showToast('连接超时');
+    if (callback) callback(false);
+  };
+  xhr.timeout = 30000;
+  xhr.send(JSON.stringify(body));
+}
+
+// 保存数据（本地+云端）
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+  if (isCloudEnabled() && !isSyncing) {
+    pushToCloud();
+  }
+}
+
+function saveLinks() {
+  localStorage.setItem(LINK_STORAGE_KEY, JSON.stringify(links));
+  if (isCloudEnabled() && !isSyncing) {
+    pushToCloud();
+  }
+}
+
+function loadData() {
+  var saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try { customers = JSON.parse(saved); } catch(e) { customers = []; }
+  }
+  if (!customers) customers = [];
+  var savedLinks = localStorage.getItem(LINK_STORAGE_KEY);
+  if (savedLinks) {
+    try { links = JSON.parse(savedLinks); } catch(e) { links = []; }
+  }
+}
+
+// ==================== 示例数据（已清空） ====================
+function getSampleData() {
+  return [];
+}
+
+// ==================== 时间显示 ====================
+function updateDateTime() {
+  var now = new Date();
+  var days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  var y = now.getFullYear();
+  var m = now.getMonth()+1;
+  var d = now.getDate();
+  var h = String(now.getHours()).padStart(2,'0');
+  var mi = String(now.getMinutes()).padStart(2,'0');
+  var s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('datetime').textContent = y+'年'+m+'月'+d+'日 '+days[now.getDay()]+' '+h+':'+mi+':'+s;
+}
+setInterval(updateDateTime, 1000);
+updateDateTime();
+
+// ==================== 表格列定义 ====================
+var COLUMNS = [
+  {key:'checkbox', label:'', width:40, sortable:false},
+  {key:'index', label:'序号', width:50, sortable:false},
+  {key:'yingfu', label:'营服', width:120, sortable:true},
+  {key:'wuji', label:'五级包区', width:120, sortable:true},
+  {key:'custName', label:'客户名称', width:200, sortable:true},
+  {key:'custId', label:'cust_id', width:120, sortable:true},
+  {key:'manager', label:'客户经理', width:90, sortable:true},
+  {key:'repNum', label:'代表号码', width:130, sortable:true},
+  {key:'custCode', label:'客户编码', width:100, sortable:true},
+  {key:'payCode', label:'缴费编码', width:120, sortable:true},
+  {key:'monthFee', label:'月消费(元)', width:118, sortable:true},
+  {key:'products', label:'产品结构', width:152, sortable:true},
+  {key:'ops', label:'操作', width:160, sortable:false}
+];
+
+function renderTableHead() {
+  var html = '';
+  COLUMNS.forEach(function(col, ci) {
+    var sortIcon = '';
+    if (col.sortable) {
+      var cls = 'sort-icon-inline';
+      if (sortColumn === col.key) {
+        cls += sortDir > 0 ? ' asc' : ' desc';
+      }
+      sortIcon = '<span class="'+cls+'">\u21C5</span>';
+    }
+    var resizeHandle = '<span class="col-resize-handle" onmousedown="startColResize(event,'+ci+')" onclick="event.stopPropagation();event.preventDefault()"></span>';
+    if (col.key === 'checkbox') {
+      html += '<th style="width:40px"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">'+resizeHandle+'</th>';
+    } else if (col.sortable) {
+      html += '<th style="width:'+col.width+'px" onclick="sortBy(\''+col.key+'\')" title="点击排序">'+col.label+sortIcon+resizeHandle+'</th>';
+    } else {
+      html += '<th style="width:'+col.width+'px">'+col.label+resizeHandle+'</th>';
+    }
+  });
+  document.getElementById('tableHead').innerHTML = html;
+}
+
+function getCellValue(cust, key) {
+  switch(key) {
+    case 'index': return '';
+    case 'yingfu': return cust.yingfu || '';
+    case 'wuji': return cust.wuji || '';
+    case 'custName': return cust.custName || '';
+    case 'custId': return cust.custId || '';
+    case 'manager': return cust.manager || '';
+    case 'repNum': return (cust.paymentCodes||[]).map(function(p){return p.repNum;}).join('、');
+    case 'custCode': return (cust.paymentCodes||[]).map(function(p){return p.custCode;}).join('、');
+    case 'payCode': return (cust.paymentCodes||[]).map(function(p){return p.payCode;}).join('、');
+    case 'monthFee': return cust.monthFee || 0;
+    case 'products': return (cust.products||[]).map(function(p){return p.name;}).filter(function(v,i,arr){return arr.indexOf(v)===i;}).join('、');
+    case 'ops': return '';
+    default: return '';
+  }
+}
+
+function renderTableBody() {
+  var data = filteredData || customers;
+  // 排序
+  if (sortColumn) {
+    data = data.slice().sort(function(a,b) {
+      var va = getCellValue(a, sortColumn);
+      var vb = getCellValue(b, sortColumn);
+      if (typeof va === 'number' && typeof vb === 'number') {
+        return (va - vb) * sortDir;
+      }
+      return String(va).localeCompare(String(vb), 'zh-CN') * sortDir;
+    });
+  }
+  // 分页
+  var total = data.length;
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (currentPage > totalPages) currentPage = totalPages;
+  var startIdx = (currentPage - 1) * pageSize;
+  var pageData = data.slice(startIdx, startIdx + pageSize);
+
+  var html = '';
+  if (pageData.length === 0) {
+    html = '<tr><td colspan="'+COLUMNS.length+'" style="text-align:center;padding:40px;color:#999;">暂无客户数据</td></tr>';
+  } else {
+    pageData.forEach(function(cust, idx) {
+      var payCodes = cust.paymentCodes || [];
+      var rowCount = payCodes.length || 1;
+      var rowClass = (idx % 2 === 1) ? ' class="row-alt"' : '';
+      for (var pi = 0; pi < rowCount; pi++) {
+        var pc = payCodes[pi] || {custCode:'',repNum:'',payCode:''};
+        html += '<tr data-id="'+cust.id+'"'+rowClass+'>';
+        COLUMNS.forEach(function(col) {
+          // rowspan合并的列，后续行不输出
+          if (pi > 0 && ['checkbox','index','yingfu','wuji','custName','custId','manager','monthFee','products','ops'].indexOf(col.key) !== -1) {
+            return;
+          }
+          if (col.key === 'checkbox') {
+            html += '<td rowspan="'+rowCount+'"><input type="checkbox" class="row-checkbox" value="'+cust.id+'" onchange="updateBatchCount()"></td>';
+          } else if (col.key === 'index') {
+            html += '<td rowspan="'+rowCount+'">'+(startIdx + idx + 1)+'</td>';
+          } else if (col.key === 'monthFee') {
+            var fee = cust.monthFee || 0;
+            html += '<td rowspan="'+rowCount+'">'+(fee>0?fee:'')+'</td>';
+          } else if (col.key === 'products') {
+            var pval = (cust.products||[]).map(function(p){return p.name;}).filter(function(v,i,arr){return arr.indexOf(v)===i;}).join('、');
+            html += '<td rowspan="'+rowCount+'"><span class="cell-text" title="'+escAttr(pval)+'">'+escHtml(pval)+'</span></td>';
+          } else if (col.key === 'ops') {
+            html += '<td rowspan="'+rowCount+'" class="col-ops"><a class="op-view" onclick="viewCustomer('+cust.id+')">查看</a><a class="op-edit" onclick="editCustomer('+cust.id+')">编辑</a><a class="op-del" onclick="deleteCustomer('+cust.id+')">删除</a><a class="op-remark" onclick="viewRemark('+cust.id+')">备注</a></td>';
+          } else if (col.key === 'repNum') {
+            html += '<td><span class="cell-text" title="'+escAttr(pc.repNum)+'">'+escHtml(pc.repNum)+'</span></td>';
+          } else if (col.key === 'custCode') {
+            html += '<td><span class="cell-text" title="'+escAttr(pc.custCode)+'">'+escHtml(pc.custCode)+'</span></td>';
+          } else if (col.key === 'payCode') {
+            html += '<td><span class="cell-text" title="'+escAttr(pc.payCode)+'">'+escHtml(pc.payCode)+'</span></td>';
+          } else {
+            var val = getCellValue(cust, col.key);
+            html += '<td rowspan="'+rowCount+'"><span class="cell-text" title="'+escAttr(val)+'">'+escHtml(val)+'</span></td>';
+          }
+        });
+        html += '</tr>';
+      }
+    });
+  }
+  document.getElementById('tableBody').innerHTML = html;
+  renderPagination(total, totalPages);
+  // 同一客户多行联动高亮
+  var trs = document.getElementById('tableBody').querySelectorAll('tr[data-id]');
+  trs.forEach(function(tr) {
+    tr.onmouseenter = function() {
+      var cid = this.getAttribute('data-id');
+      document.getElementById('tableBody').querySelectorAll('tr[data-id="'+cid+'"]').forEach(function(r) {
+        r.classList.add('row-hover');
+      });
+    };
+    tr.onmouseleave = function() {
+      var cid = this.getAttribute('data-id');
+      document.getElementById('tableBody').querySelectorAll('tr[data-id="'+cid+'"]').forEach(function(r) {
+        r.classList.remove('row-hover');
+      });
+    };
+  });
+  // 重置全选复选框和批量删除按钮
+  var selectAll = document.getElementById('selectAllCheckbox');
+  if (selectAll) selectAll.checked = false;
+  updateBatchCount();
+}
+
+// ===== 列宽拖拽功能 =====
+var colResizeState = null;
+function startColResize(e, colIdx) {
+  e.stopPropagation();
+  e.preventDefault();
+  var th = e.target.parentElement;
+  var table = th.closest('table');
+  var startX = e.clientX;
+  var startWidth = th.offsetWidth;
+  var ths = table.querySelectorAll('thead th');
+  var realIdx = Array.prototype.indexOf.call(ths, th);
+  colResizeState = { th: th, table: table, startX: startX, startWidth: startWidth, colIdx: realIdx, rafId: 0, pendingWidth: 0 };
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', onColResizeMove);
+  document.addEventListener('mouseup', onColResizeEnd);
+}
+function onColResizeMove(e) {
+  if (!colResizeState) return;
+  var diff = e.clientX - colResizeState.startX;
+  colResizeState.pendingWidth = Math.max(40, colResizeState.startWidth + diff);
+  if (!colResizeState.rafId) {
+    colResizeState.rafId = requestAnimationFrame(function() {
+      colResizeState.rafId = 0;
+      colResizeState.th.style.width = colResizeState.pendingWidth + 'px';
+      if (colResizeState.table.id === 'mainTable' && colResizeState.colIdx >= 0 && colResizeState.colIdx < COLUMNS.length) {
+        COLUMNS[colResizeState.colIdx].width = colResizeState.pendingWidth;
+      }
+    });
+  }
+}
+function onColResizeEnd() {
+  if (!colResizeState) return;
+  if (colResizeState.rafId) { cancelAnimationFrame(colResizeState.rafId); colResizeState.rafId = 0; }
+  colResizeState.th.style.width = colResizeState.pendingWidth + 'px';
+  if (colResizeState.table.id === 'mainTable' && colResizeState.colIdx >= 0 && colResizeState.colIdx < COLUMNS.length) {
+    COLUMNS[colResizeState.colIdx].width = colResizeState.pendingWidth;
+  }
+  colResizeState = null;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  document.removeEventListener('mousemove', onColResizeMove);
+  document.removeEventListener('mouseup', onColResizeEnd);
+}
+function startModuleColResize(e, handle) {
+  e.stopPropagation();
+  e.preventDefault();
+  var th = handle.parentElement;
+  var table = th.closest('table');
+  var startX = e.clientX;
+  var startWidth = th.offsetWidth;
+  var tableWidth = table.offsetWidth;
+  colResizeState = { th: th, table: table, startX: startX, startWidth: startWidth, tableWidth: tableWidth, isModule: true, rafId: 0, pendingPct: 0 };
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', onModuleColResizeMove);
+  document.addEventListener('mouseup', onModuleColResizeEnd);
+}
+function onModuleColResizeMove(e) {
+  if (!colResizeState || !colResizeState.isModule) return;
+  var diff = e.clientX - colResizeState.startX;
+  var newWidth = Math.max(40, colResizeState.startWidth + diff);
+  colResizeState.pendingPct = (newWidth / colResizeState.tableWidth * 100);
+  if (!colResizeState.rafId) {
+    colResizeState.rafId = requestAnimationFrame(function() {
+      colResizeState.rafId = 0;
+      colResizeState.th.style.width = colResizeState.pendingPct + '%';
+    });
+  }
+}
+function onModuleColResizeEnd() {
+  if (!colResizeState) return;
+  if (colResizeState.rafId) { cancelAnimationFrame(colResizeState.rafId); colResizeState.rafId = 0; }
+  if (colResizeState.pendingPct) colResizeState.th.style.width = colResizeState.pendingPct + '%';
+  colResizeState = null;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  document.removeEventListener('mousemove', onModuleColResizeMove);
+  document.removeEventListener('mouseup', onModuleColResizeEnd);
+}
+
+function renderPagination(total, totalPages) {
+  var html = '<div class="page-info">共 '+total+' 条，第 '+currentPage+'/'+totalPages+' 页</div>';
+  html += '<div class="page-ctrl">';
+  html += '<select onchange="changePageSize(this.value)">';
+  var presetSizes = [10,20,30,50,1000];
+  presetSizes.forEach(function(s) {
+    html += '<option value="'+s+'" '+(pageSize===s?'selected':'')+'>'+s+' 条/页</option>';
+  });
+  // 如果当前pageSize不在预设列表中，显示自定义选项
+  if (presetSizes.indexOf(pageSize) === -1) {
+    html += '<option value="'+pageSize+'" selected>'+pageSize+' 条/页</option>';
+  }
+  html += '</select>';
+  // 自定义每页条数输入框
+  html += '<span class="page-size-label">自定义</span>';
+  html += '<input type="number" class="page-size-custom" value="'+pageSize+'" min="1" max="9999" onchange="changePageSize(this.value)" onkeyup="if(event.key===\'Enter\')this.blur()">';
+  html += '<span class="page-size-label">条/页</span>';
+  html += '<button onclick="goPage(1)" '+(currentPage<=1?'disabled':'')+'>首页</button>';
+  html += '<button onclick="goPage('+(currentPage-1)+')" '+(currentPage<=1?'disabled':'')+'>上一页</button>';
+  html += '<button onclick="goPage('+(currentPage+1)+')" '+(currentPage>=totalPages?'disabled':'')+'>下一页</button>';
+  html += '<button onclick="goPage('+totalPages+')" '+(currentPage>=totalPages?'disabled':'')+'>末页</button>';
+  html += '</div>';
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderTableBody(); }
+function changePageSize(s) { pageSize = parseInt(s); currentPage = 1; renderTableBody(); }
+function sortBy(key) {
+  if (sortColumn === key) {
+    sortDir = -sortDir;
+  } else {
+    sortColumn = key;
+    sortDir = 1;
+  }
+  renderTableBody();
+}
+
+// ==================== 搜索 ====================
+function onSearch() {
+  var field = document.getElementById('searchField').value;
+  var mode = document.getElementById('searchMode').value;
+  var q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) {
+    filteredData = null;
+  } else {
+    var keywords = q.split(/\s+/);
+    filteredData = customers.filter(function(cust) {
+      if (mode === 'include') {
+        return keywords.every(function(kw) {
+          return matchField(cust, field, kw);
+        });
+      } else {
+        return !keywords.some(function(kw) {
+          return matchField(cust, field, kw);
+        });
+      }
+    });
+  }
+  currentPage = 1;
+  renderTableBody();
+}
+
+function matchField(cust, field, kw) {
+  if (field === 'any') {
+    var fields = [
+      cust.yingfu, cust.wuji, cust.custName, cust.custId, cust.manager,
+      (cust.paymentCodes||[]).map(function(p){return p.repNum;}).join(' '),
+      (cust.paymentCodes||[]).map(function(p){return p.custCode;}).join(' '),
+      (cust.paymentCodes||[]).map(function(p){return p.payCode;}).join(' ')
+    ];
+    for (var i = 0; i < fields.length; i++) {
+      if (matchKeyword(fields[i], kw)) return true;
+    }
+    return false;
+  } else {
+    var val;
+    if (field === 'repNum') val = (cust.paymentCodes||[]).map(function(p){return p.repNum;}).join(' ');
+    else if (field === 'custCode') val = (cust.paymentCodes||[]).map(function(p){return p.custCode;}).join(' ');
+    else if (field === 'payCode') val = (cust.paymentCodes||[]).map(function(p){return p.payCode;}).join(' ');
+    else val = cust[field];
+    return matchKeyword(val, kw);
+  }
+}
+
+function matchKeyword(val, kw) {
+  var s = (val || '').toString().toLowerCase();
+  if (s.indexOf(kw) !== -1) return true;
+  var py = getFullPinyin(val || '').toLowerCase();
+  if (py.indexOf(kw) !== -1) return true;
+  var fl = getFirstLetters(val || '').toLowerCase();
+  if (fl.indexOf(kw) !== -1) return true;
+  return false;
+}
+
+function resetSearch() {
+  document.getElementById('searchField').value = 'any';
+  document.getElementById('searchMode').value = 'include';
+  document.getElementById('searchInput').value = '';
+  filteredData = null;
+  sortColumn = null;
+  currentPage = 1;
+  renderTableBody();
+}
+
+// ==================== 弹窗: 新增/编辑/查看 ====================
+var currentMode = 'add'; // add/edit/view
+var currentCustId = null;
+
+function openModal(mode, id) {
+  currentMode = mode;
+  currentCustId = id || null;
+  var cust = null;
+  if (mode !== 'add') {
+    cust = customers.find(function(c){return c.id === id;});
+    if (!cust) { showToast('未找到客户数据'); return; }
+  }
+  var titlePrefix = mode === 'add' ? '新增客户' : (mode === 'edit' ? '编辑客户' : '查看客户');
+  var title = mode === 'add' ? titlePrefix : (titlePrefix + '-' + (cust.custName || ''));
+  document.getElementById('modalTitle').textContent = title;
+
+  var isView = (mode === 'view');
+  var bodyClass = isView ? 'view-mode' : '';
+  var html = '<div class="'+bodyClass+'">';
+  // Tabs
+  html += '<div class="tabs">';
+  html += '<button class="tab-btn active" onclick="switchTab(this,\'tab1\')">基础信息</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab2\')">合同情况</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab3\')">业务结构</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab4\')">商机情况</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab5\')">友商信息</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab6\')">配餐方案</button>';
+  html += '<button class="tab-btn" onclick="switchTab(this,\'tab7\')">备注</button>';
+  html += '</div>';
+
+  // ===== Tab1: 基础信息 =====
+  html += '<div class="tab-panel active" id="tab1">';
+  html += '<div class="form-row">';
+  html += '<div class="form-group"><label>营服名称</label><input type="text" id="f_yingfu" value="'+escVal(cust&&cust.yingfu)+'"></div>';
+  html += '<div class="form-group"><label>客户经理</label><input type="text" id="f_manager" value="'+escVal(cust&&cust.manager)+'"></div>';
+  html += '<div class="form-group"><label>五级包区</label><input type="text" id="f_wuji" value="'+escVal(cust&&cust.wuji)+'"></div>';
+  html += '</div>';
+  html += '<div class="form-row">';
+  html += '<div class="form-group"><label>行业类型</label><input type="text" id="f_industry" value="'+escVal(cust&&cust.industry)+'"></div>';
+  html += '<div class="form-group"><label>cust_id</label><input type="text" id="f_custId" value="'+escVal(cust&&cust.custId)+'"></div>';
+  html += '<div class="form-group"><label>月消费(元)</label><input type="number" id="f_monthFee" value="'+escVal(cust&&cust.monthFee)+'"></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label>客户名称</label><input type="text" id="f_custName" value="'+escVal(cust&&cust.custName)+'"></div>';
+  // 缴费编码
+  html += '<div class="multi-section">';
+  html += '<div class="multi-title">缴费信息';
+  if (!isView) {
+    html += '<button class="btn-module-exp" onclick="exportModule(\'paymentCodes\')">导出</button>';
+    html += '<button class="btn-module-imp" onclick="openModuleImportModal(\'paymentCodes\')">导入</button>';
+  }
+  html += '</div>';
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'payCodeRows\',this)"></th>')+'<th style="width:16%">客户编码<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:16%">代表号码<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:16%">缴费编码<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:16%">缴费银行<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:16%">缴费账户<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="payCodeRows">';
+  var pcs = (cust&&cust.paymentCodes) || [];
+  if (pcs.length === 0 && !isView) pcs = [{custCode:'',repNum:'',payCode:'',payBank:'',payAccount:''}];
+  pcs.forEach(function(p, i) {
+    html += renderPayCodeRow(p, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addPayCodeRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'payCodeRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'payCodeRows\')">反选</button>';
+  html += '<div class="module-pagination" id="payCodeRows_pageNav"></div>';
+  html += '</div>';
+  // 经营情况
+  html += '<div class="multi-section">';
+  html += '<div class="multi-title">经营情况</div>';
+  html += '<div class="form-row-2">';
+  html += '<div class="form-group"><label>主营业务</label><textarea id="f_mainBusi" rows="2">'+escHtml(cust&&cust.business&&cust.business.main)+'</textarea></div>';
+  html += '<div class="form-group"><label>网络规范</label><textarea id="f_network" rows="2">'+escHtml(cust&&cust.business&&cust.business.network)+'</textarea></div>';
+  html += '</div>';
+  html += '</div>';
+  // 关键联系人
+  html += '<div class="multi-section">';
+  html += '<div class="multi-title">关键联系人';
+  if (!isView) {
+    html += '<button class="btn-module-exp" onclick="exportModule(\'contacts\')">导出</button>';
+    html += '<button class="btn-module-imp" onclick="openModuleImportModal(\'contacts\')">导入</button>';
+  }
+  html += '</div>';
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'contactRows\',this)"></th>')+'<th style="width:30%">联系人<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:30%">职务<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:30%">联系电话<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="contactRows">';
+  var cs = (cust&&cust.contacts) || [];
+  if (cs.length === 0 && !isView) cs = [{name:'',position:'',phone:''}];
+  cs.forEach(function(c, i) {
+    html += renderContactRow(c, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addContactRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'contactRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'contactRows\')">反选</button>';
+  html += '<div class="module-pagination" id="contactRows_pageNav"></div>';
+  html += '</div>';
+  html += '</div>';
+
+  // ===== Tab2: 合同情况 =====
+  html += '<div class="tab-panel" id="tab2">';
+  if (!isView) {
+    html += '<div style="text-align:right;margin-bottom:8px;"><button class="btn-module-exp" onclick="exportModule(\'contracts\')">导出</button><button class="btn-module-imp" onclick="openModuleImportModal(\'contracts\')">导入</button></div>';
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'contractRows\',this)"></th>')+'<th style="width:13%">合同编码<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">到期日期<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">合同类型<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:22%">合同内容<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:11%">月租(元)<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">是否到期<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">是否续约<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="contractRows">';
+  var cts = (cust&&cust.contracts) || [];
+  if (cts.length === 0 && !isView) cts = [{code:'',expireDate:'',type:'',content:'',fee:'',isExpired:'',isRenewed:''}];
+  cts.forEach(function(c, i) {
+    html += renderContractRow(c, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addContractRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'contractRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'contractRows\')">反选</button>';
+  html += '<div class="module-pagination" id="contractRows_pageNav"></div>';
+  html += '</div>';
+
+  // ===== Tab3: 业务结构 =====
+  html += '<div class="tab-panel" id="tab3">';
+  if (!isView) {
+    html += '<div style="text-align:right;margin-bottom:8px;"><button class="btn-module-exp" onclick="exportModule(\'products\')">导出</button><button class="btn-module-imp" onclick="openModuleImportModal(\'products\')">导入</button></div>';
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'productRows\',this)"></th>')+'<th style="width:12%">产品<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">接入号<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">服务编码<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">月租(元)<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:20%">套餐内容<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">到期日期<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">是否在网<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="productRows">';  var ps = (cust&&cust.products) || [];
+  if (ps.length === 0 && !isView) ps = [{name:'',accessNum:'',serviceCode:'',fee:'',content:'',expireDate:'',onlineStatus:''}];
+  ps.forEach(function(p, i) {
+    html += renderProductRow(p, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addProductRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'productRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'productRows\')">反选</button>';
+  html += '<div class="module-pagination" id="productRows_pageNav"></div>';
+  html += '</div>';
+
+  // ===== Tab4: 商机情况 =====
+  html += '<div class="tab-panel" id="tab4">';
+  if (!isView) {
+    html += '<div style="text-align:right;margin-bottom:8px;"><button class="btn-module-exp" onclick="exportModule(\'opportunities\')">导出</button><button class="btn-module-imp" onclick="openModuleImportModal(\'opportunities\')">导入</button></div>';
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'oppRows\',this)"></th>')+'<th style="width:20%">商机名称<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:15%">商机金额(元)<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:15%">获取时间<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:20%">跟进情况<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:15%">转化时间<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:15%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="oppRows">';
+  var ops = (cust&&cust.opportunities) || [];
+  if (ops.length === 0 && !isView) ops = [{name:'',amount:'',getTime:'',followUp:'',convertTime:''}];
+  ops.forEach(function(o, i) {
+    html += renderOppRow(o, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addOppRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'oppRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'oppRows\')">反选</button>';
+  html += '<div class="module-pagination" id="oppRows_pageNav"></div>';
+  html += '</div>';
+
+  // ===== Tab5: 友商信息 =====
+  html += '<div class="tab-panel" id="tab5">';
+  if (!isView) {
+    html += '<div style="text-align:right;margin-bottom:8px;"><button class="btn-module-exp" onclick="exportModule(\'competitors\')">导出</button><button class="btn-module-imp" onclick="openModuleImportModal(\'competitors\')">导入</button></div>';
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'compRows\',this)"></th>')+'<th style="width:12%">友商名称<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:18%">客户在用业务<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">月租(元)<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">到期日期<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:25%">可执行策反方案<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">是否策反<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:13%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="compRows">';
+  var cps = (cust&&cust.competitors) || [];
+  if (cps.length === 0 && !isView) cps = [{compName:'',custBusiness:'',fee:'',expireDate:'',strategy:'',poachStatus:''}];
+  cps.forEach(function(c, i) {
+    html += renderCompRow(c, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addCompRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'compRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'compRows\')">反选</button>';
+  html += '<div class="module-pagination" id="compRows_pageNav"></div>';
+  html += '</div>';
+
+  // ===== Tab6: 配餐方案 =====
+  html += '<div class="tab-panel" id="tab6">';
+  if (!isView) {
+    html += '<div style="text-align:right;margin-bottom:8px;"><button class="btn-module-exp" onclick="exportModule(\'mealPlans\')">导出</button><button class="btn-module-imp" onclick="openModuleImportModal(\'mealPlans\')">导入</button></div>';
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'mealPlanRows\',this)"></th>')+'<th style="width:14%">配餐日期<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:26%">配餐内容<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:12%">价值<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:26%">可执行性分析<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:14%">执行结果<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:8%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="mealPlanRows">';
+  var mps = (cust&&cust.mealPlans) || [];
+  if (mps.length === 0 && !isView) mps = [{mealDate:'',mealContent:'',value:'',analysis:'',execResult:''}];
+  mps.forEach(function(m, i) {
+    html += renderMealPlanRow(m, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addMealPlanRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'mealPlanRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'mealPlanRows\')">反选</button>';
+  html += '<div class="module-pagination" id="mealPlanRows_pageNav"></div>';
+  html += '</div>';
+
+  // ===== Tab7: 备注 =====
+  html += '<div class="tab-panel" id="tab7">';
+  var remarks = (cust&&cust.remarks) || [];
+  // 无备注时自动生成默认文字（编辑和查看模式都生成）
+  if (remarks.length === 0 && cust) {
+    var prodStr = (cust.products||[]).map(function(p){return p.name;}).filter(function(v,i,arr){return arr.indexOf(v)===i;}).join('、');
+    var firstRep = (cust.paymentCodes&&cust.paymentCodes[0]&&cust.paymentCodes[0].repNum) || '';
+    var defRemark = (cust.custName||'') + '是我司政企客户，在用我司' + (prodStr||'') + '业务，月费用' + (cust.monthFee||0) + '元，代表号码' + (firstRep||'');
+    remarks = [{content: defRemark}];
+  }
+  html += '<table class="multi-table"><thead><tr>'+(isView?'':'<th class="row-check-td"><input type="checkbox" onclick="toggleModuleSelectAll(\'remarkRows\',this)"></th>')+'<th style="width:90%">备注内容<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th><th style="width:10%">操作<span class="col-resize-handle" onmousedown="startModuleColResize(event,this)"></span></th></tr></thead><tbody id="remarkRows">';
+  remarks.forEach(function(r, i) {
+    html += renderRemarkRow(r, i);
+  });
+  html += '</tbody></table>';
+  if (!isView) html += '<button class="add-row-btn" onclick="addRemarkRow()">+ 添加行</button><button class="batch-del-btn" onclick="batchDeleteModuleRows(\'remarkRows\')">批量删除</button><button class="batch-del-btn" style="background:#eaf2f8;border-color:#2e86c1;color:#2e86c1;" onclick="invertModuleSelect(\'remarkRows\')">反选</button>';
+  html += '<div class="module-pagination" id="remarkRows_pageNav"></div>';
+  html += '</div>';
+
+  html += '</div>'; // end bodyClass
+
+  document.getElementById('modalBody').innerHTML = html;
+  // 初始化所有模块分页
+  var initTbodyIds = ['payCodeRows','contactRows','contractRows','productRows','oppRows','compRows','mealPlanRows','remarkRows'];
+  initTbodyIds.forEach(function(tid) { refreshModulePage(tid); });
+  // Footer
+  var footerHtml = '';
+  if (isView) {
+    footerHtml = '<button class="btn-cancel" onclick="closeModal()">关闭</button>';
+    footerHtml += '<button class="btn-save" onclick="closeModal();editCustomer('+id+')">编辑</button>';
+  } else {
+    footerHtml = '<button class="btn-cancel" onclick="closeModal()">取消</button>';
+    footerHtml += '<button class="btn-save" onclick="saveCustomer()">保存</button>';
+  }
+  document.getElementById('modalFooter').innerHTML = footerHtml;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function escVal(v) {
+  if (v === null || v === undefined) return '';
+  return v.toString().replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escHtml(v) {
+  if (v === null || v === undefined) return '';
+  return v.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escAttr(v) {
+  if (v === null || v === undefined) return '';
+  return v.toString().replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById(tabId).classList.add('active');
+}
+
+// ===== 多行渲染函数 =====
+function renderPayCodeRow(p, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea data-type="custCode" '+disabled+'>'+escHtml(p.custCode)+'</textarea></td>'+
+    '<td><textarea data-type="repNum" '+disabled+'>'+escHtml(p.repNum)+'</textarea></td>'+
+    '<td><textarea data-type="payCode" '+disabled+'>'+escHtml(p.payCode)+'</textarea></td>'+
+    '<td><textarea data-type="payBank" '+disabled+'>'+escHtml(p.payBank)+'</textarea></td>'+
+    '<td><textarea data-type="payAccount" '+disabled+'>'+escHtml(p.payAccount)+'</textarea></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderContactRow(c, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><input type="text" value="'+escVal(c.name)+'" data-type="name" '+disabled+'></td>'+
+    '<td><input type="text" value="'+escVal(c.position)+'" data-type="position" '+disabled+'></td>'+
+    '<td><input type="text" value="'+escVal(c.phone)+'" data-type="phone" '+disabled+'></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderContractRow(c, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea data-type="code" '+disabled+'>'+escHtml(c.code)+'</textarea></td>'+
+    '<td><input type="date" value="'+escVal(c.expireDate)+'" data-type="expireDate" '+disabled+'></td>'+
+    '<td><textarea data-type="type" '+disabled+'>'+escHtml(c.type)+'</textarea></td>'+
+    '<td><textarea data-type="content" '+disabled+'>'+escHtml(c.content)+'</textarea></td>'+
+    '<td><input type="number" value="'+escVal(c.fee)+'" data-type="fee" '+disabled+'></td>'+
+    '<td><select data-type="isExpired" '+disabled+'><option value=""'+(c.isExpired===''?' selected':'')+'></option><option value="是"'+(c.isExpired==='是'?' selected':'')+'>是</option><option value="否"'+(c.isExpired==='否'?' selected':'')+'>否</option></select></td>'+
+    '<td><select data-type="isRenewed" '+disabled+'><option value=""'+(c.isRenewed===''?' selected':'')+'></option><option value="是"'+(c.isRenewed==='是'?' selected':'')+'>是</option><option value="否"'+(c.isRenewed==='否'?' selected':'')+'>否</option></select></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderProductRow(p, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea data-type="name" '+disabled+'>'+escHtml(p.name)+'</textarea></td>'+
+    '<td><textarea data-type="accessNum" '+disabled+'>'+escHtml(p.accessNum)+'</textarea></td>'+
+    '<td><textarea data-type="serviceCode" '+disabled+'>'+escHtml(p.serviceCode)+'</textarea></td>'+
+    '<td><input type="number" value="'+escVal(p.fee)+'" data-type="fee" '+disabled+'></td>'+
+    '<td><textarea data-type="content" '+disabled+'>'+escHtml(p.content)+'</textarea></td>'+
+    '<td><input type="date" value="'+escVal(p.expireDate)+'" data-type="expireDate" '+disabled+'></td>'+
+    '<td><select data-type="onlineStatus" '+disabled+'><option value=""'+(p.onlineStatus===''?' selected':'')+'></option><option value="在用"'+(p.onlineStatus==='在用'?' selected':'')+'>在用</option><option value="离网"'+(p.onlineStatus==='离网'?' selected':'')+'>离网</option></select></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderOppRow(o, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea data-type="name" '+disabled+'>'+escHtml(o.name)+'</textarea></td>'+
+    '<td><input type="number" value="'+escVal(o.amount)+'" data-type="amount" '+disabled+'></td>'+
+    '<td><input type="date" value="'+escVal(o.getTime)+'" data-type="getTime" '+disabled+'></td>'+
+    '<td><textarea data-type="followUp" '+disabled+'>'+escHtml(o.followUp)+'</textarea></td>'+
+    '<td><input type="date" value="'+escVal(o.convertTime)+'" data-type="convertTime" '+disabled+'></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderCompRow(c, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea data-type="compName" '+disabled+'>'+escHtml(c.compName)+'</textarea></td>'+
+    '<td><textarea data-type="custBusiness" '+disabled+'>'+escHtml(c.custBusiness)+'</textarea></td>'+
+    '<td><input type="number" value="'+escVal(c.fee)+'" data-type="fee" '+disabled+'></td>'+
+    '<td><input type="date" value="'+escVal(c.expireDate)+'" data-type="expireDate" '+disabled+'></td>'+
+    '<td><textarea data-type="strategy" '+disabled+'>'+escHtml(c.strategy)+'</textarea></td>'+
+    '<td><select data-type="poachStatus" '+disabled+'><option value=""'+(c.poachStatus===''?' selected':'')+'></option><option value="成功"'+(c.poachStatus==='成功'?' selected':'')+'>成功</option><option value="失败"'+(c.poachStatus==='失败'?' selected':'')+'>失败</option></select></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderMealPlanRow(m, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><input type="date" value="'+escVal(m.mealDate)+'" data-type="mealDate" '+disabled+'></td>'+
+    '<td><textarea data-type="mealContent" '+disabled+'>'+escHtml(m.mealContent)+'</textarea></td>'+
+    '<td><textarea data-type="value" '+disabled+'>'+escHtml(m.value)+'</textarea></td>'+
+    '<td><textarea data-type="analysis" '+disabled+'>'+escHtml(m.analysis)+'</textarea></td>'+
+    '<td><select data-type="execResult" '+disabled+'><option value=""'+(m.execResult===''?' selected':'')+'></option><option value="成功"'+(m.execResult==='成功'?' selected':'')+'>成功</option><option value="失败"'+(m.execResult==='失败'?' selected':'')+'>失败</option><option value="不执行"'+(m.execResult==='不执行'?' selected':'')+'>不执行</option></select></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+function renderRemarkRow(r, i) {
+  var isView = currentMode === 'view';
+  var disabled = isView ? 'disabled' : '';
+  return '<tr>'+(isView?'':'<td class="row-check-td"><input type="checkbox" class="module-row-check"></td>')+'<td><textarea class="remark-textarea" data-type="content" '+disabled+'>'+escHtml(r.content||'')+'</textarea></td>'+
+    '<td>'+(isView?'':'<button class="del-row-btn" onclick="var tr=this.parentElement.parentElement;var tbody=tr.parentElement;tr.remove();refreshModulePage(tbody.id)">删除</button>')+'</td></tr>';
+}
+
+// ===== 添加行 =====
+function addPayCodeRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderPayCodeRow({custCode:'',repNum:'',payCode:'',payBank:'',payAccount:''}, 0);
+  document.getElementById('payCodeRows').appendChild(tr);
+  refreshModulePage('payCodeRows');
+}
+function addContactRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderContactRow({name:'',position:'',phone:''}, 0);
+  document.getElementById('contactRows').appendChild(tr);
+  refreshModulePage('contactRows');
+}
+function addContractRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderContractRow({code:'',expireDate:'',type:'',content:'',fee:'',isExpired:'',isRenewed:''}, 0);
+  document.getElementById('contractRows').appendChild(tr);
+  refreshModulePage('contractRows');
+}
+function addProductRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderProductRow({name:'',accessNum:'',serviceCode:'',fee:'',content:'',expireDate:'',onlineStatus:''}, 0);
+  document.getElementById('productRows').appendChild(tr);
+  refreshModulePage('productRows');
+}
+function addOppRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderOppRow({name:'',amount:'',getTime:'',followUp:'',convertTime:''}, 0);
+  document.getElementById('oppRows').appendChild(tr);
+  refreshModulePage('oppRows');
+}
+function addCompRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderCompRow({compName:'',custBusiness:'',fee:'',expireDate:'',strategy:'',poachStatus:''}, 0);
+  document.getElementById('compRows').appendChild(tr);
+  refreshModulePage('compRows');
+}
+function addMealPlanRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderMealPlanRow({mealDate:'',mealContent:'',value:'',analysis:'',execResult:''}, 0);
+  document.getElementById('mealPlanRows').appendChild(tr);
+  refreshModulePage('mealPlanRows');
+}
+function addRemarkRow() {
+  var tr = document.createElement('tr');
+  tr.innerHTML = renderRemarkRow({content:''}, 0);
+  document.getElementById('remarkRows').appendChild(tr);
+  refreshModulePage('remarkRows');
+}
+
+// ===== 模块分页+批量删除 =====
+var MODULE_PAGE_SIZE = 5;
+
+function refreshModulePage(tbodyId) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr');
+  var total = rows.length;
+  if (!modulePageInfo[tbodyId]) modulePageInfo[tbodyId] = {page:1, size:MODULE_PAGE_SIZE};
+  var info = modulePageInfo[tbodyId];
+  var totalPages = Math.max(1, Math.ceil(total / info.size));
+  if (info.page > totalPages) info.page = totalPages;
+  if (info.page < 1) info.page = 1;
+  var start = (info.page - 1) * info.size;
+  var end = start + info.size;
+  rows.forEach(function(row, i) {
+    row.style.display = (i >= start && i < end) ? '' : 'none';
+  });
+  renderModulePagination(tbodyId, total, totalPages);
+}
+
+function renderModulePagination(tbodyId, total, totalPages) {
+  var info = modulePageInfo[tbodyId];
+  var containerId = tbodyId + '_pageNav';
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.style.display = 'flex';
+  var info2 = modulePageInfo[tbodyId];
+  var html = '';
+  html += '<button class="mp-btn" onclick="goModulePage(\''+tbodyId+'\',1)"'+(info2.page===1?' disabled':'')+'>首页</button>';
+  html += '<button class="mp-btn" onclick="goModulePage(\''+tbodyId+'\','+(info2.page-1)+')"'+(info2.page===1?' disabled':'')+'>«</button>';
+  var s = Math.max(1, info2.page - 2);
+  var e2 = Math.min(totalPages, info2.page + 2);
+  for (var p = s; p <= e2; p++) {
+    html += '<button class="mp-btn'+(p===info2.page?' active':'')+'" onclick="goModulePage(\''+tbodyId+'\','+p+')">'+p+'</button>';
+  }
+  html += '<button class="mp-btn" onclick="goModulePage(\''+tbodyId+'\','+(info2.page+1)+')"'+(info2.page===totalPages?' disabled':'')+'>»</button>';
+  html += '<button class="mp-btn" onclick="goModulePage(\''+tbodyId+'\','+totalPages+')"'+(info2.page===totalPages?' disabled':'')+'>末页</button>';
+  html += '<span class="mp-info">'+info2.page+'/'+totalPages+'页 共'+total+'条</span>';
+  html += '<span class="mp-info">跳至</span><input type="number" class="mp-jump" value="'+info2.page+'" min="1" max="'+totalPages+'" onkeydown="if(event.key===\'Enter\')goModulePage(\''+tbodyId+'\',parseInt(this.value)||1)"><span class="mp-info">页</span>';
+  html += '<span class="mp-size-label">每页</span><input type="number" class="mp-size-input" value="'+info2.size+'" min="1" max="999" onkeydown="if(event.key===\'Enter\')changeModulePageSize(\''+tbodyId+'\',this.value)" onblur="changeModulePageSize(\''+tbodyId+'\',this.value)"><span class="mp-size-label">条</span>';
+  container.innerHTML = html;
+}
+
+function changeModulePageSize(tbodyId, newSize) {
+  if (!modulePageInfo[tbodyId]) modulePageInfo[tbodyId] = {page:1, size:MODULE_PAGE_SIZE};
+  modulePageInfo[tbodyId].size = parseInt(newSize) || MODULE_PAGE_SIZE;
+  modulePageInfo[tbodyId].page = 1;
+  refreshModulePage(tbodyId);
+}
+
+function goModulePage(tbodyId, page) {
+  if (!modulePageInfo[tbodyId]) modulePageInfo[tbodyId] = {page:1, size:MODULE_PAGE_SIZE};
+  modulePageInfo[tbodyId].page = page;
+  refreshModulePage(tbodyId);
+}
+
+function toggleModuleSelectAll(tbodyId, masterCheckbox) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var checks = tbody.querySelectorAll('.module-row-check');
+  checks.forEach(function(cb) {
+    if (cb !== masterCheckbox) cb.checked = masterCheckbox.checked;
+  });
+}
+
+function invertModuleSelect(tbodyId) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var checks = tbody.querySelectorAll('.module-row-check');
+  checks.forEach(function(cb) {
+    cb.checked = !cb.checked;
+  });
+}
+
+function batchDeleteModuleRows(tbodyId) {
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  var checks = tbody.querySelectorAll('.module-row-check:checked');
+  if (checks.length === 0) {
+    showToast('请先勾选要删除的行');
+    return;
+  }
+  if (!confirm('确定删除选中的 '+checks.length+' 行吗？')) return;
+  checks.forEach(function(cb) {
+    var tr = cb.closest('tr');
+    if (tr) tr.remove();
+  });
+  refreshModulePage(tbodyId);
+  showToast('已删除 '+checks.length+' 行');
+}
+
+// ===== 收集表单数据 =====
+function collectRows(tbodyId, fields) {
+  var result = [];
+  var tbody = document.getElementById(tbodyId);
+  if (!tbody) return result;
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(row) {
+    var inputs = row.querySelectorAll('input:not([type=checkbox]),textarea,select');
+    if (inputs.length === 0) return;
+    var obj = {};
+    fields.forEach(function(f, idx) {
+      obj[f] = inputs[idx] ? inputs[idx].value.trim() : '';
+    });
+    // 跳过全空行
+    var hasVal = fields.some(function(f){return obj[f] !== '';});
+    if (hasVal) result.push(obj);
+  });
+  return result;
+}
+
+function collectFormData() {
+  var cust = {};
+  cust.yingfu = val('f_yingfu');
+  cust.manager = val('f_manager');
+  cust.wuji = val('f_wuji');
+  cust.custName = val('f_custName');
+  cust.custId = val('f_custId');
+  cust.monthFee = parseFloat(val('f_monthFee')) || 0;
+  cust.industry = val('f_industry');
+  cust.paymentCodes = collectRows('payCodeRows', ['custCode','repNum','payCode','payBank','payAccount']);
+  cust.contacts = collectRows('contactRows', ['name','position','phone']);
+  cust.business = {main: val('f_mainBusi'), network: val('f_network')};
+  cust.contracts = collectRows('contractRows', ['code','expireDate','type','content','fee','isExpired','isRenewed']);
+  cust.products = collectRows('productRows', ['name','accessNum','serviceCode','fee','content','expireDate','onlineStatus']);
+  cust.opportunities = collectRows('oppRows', ['name','amount','getTime','followUp','convertTime']);
+  cust.competitors = collectRows('compRows', ['compName','custBusiness','fee','expireDate','strategy','poachStatus']);
+  cust.mealPlans = collectRows('mealPlanRows', ['mealDate','mealContent','value','analysis','execResult']);
+  cust.remarks = collectRows('remarkRows', ['content']);
+  // 新增客户时，如果备注为空则自动生成默认文字
+  if (currentMode === 'add' && cust.remarks.length === 0) {
+    var prodStr = (cust.products||[]).map(function(p){return p.name;}).filter(function(v,i,arr){return arr.indexOf(v)===i;}).join('、');
+    var firstRep = (cust.paymentCodes&&cust.paymentCodes[0]&&cust.paymentCodes[0].repNum) || '';
+    var defRemark = (cust.custName||'') + '是我司政企客户，在用我司' + (prodStr||'') + '业务，月费用' + (cust.monthFee||0) + '元，代表号码' + (firstRep||'');
+    cust.remarks = [{content: defRemark}];
+  }
+  return cust;
+}
+
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+// ===== 保存 =====
+function saveCustomer() {
+  var cust = collectFormData();
+  if (!cust.custName) {
+    showToast('请填写客户名称');
+    return;
+  }
+  if (currentMode === 'add') {
+    cust.id = nextId();
+    customers.push(cust);
+  } else {
+    cust.id = currentCustId;
+    var idx = customers.findIndex(function(c){return c.id === currentCustId;});
+    if (idx !== -1) {
+      customers[idx] = cust;
+    } else {
+      customers.push(cust);
+    }
+  }
+  saveData();
+  closeModal();
+  onSearch();
+  renderTableBody();
+  showToast(currentMode === 'add' ? '新增成功' : '保存成功');
+}
+
+function nextId() {
+  if (customers.length === 0) return 1;
+  return Math.max.apply(null, customers.map(function(c){return c.id;})) + 1;
+}
+
+function viewCustomer(id) {
+  openModal('view', id);
+}
+
+function editCustomer(id) {
+  openModal('edit', id);
+}
+
+function deleteCustomer(id) {
+  var cust = customers.find(function(c){return c.id === id;});
+  if (!cust) return;
+  if (confirm('确定删除客户「'+cust.custName+'」吗？此操作不可撤销。')) {
+    customers = customers.filter(function(c){return c.id !== id;});
+    saveData();
+    onSearch();
+    renderTableBody();
+    showToast('已删除');
+  }
+}
+
+// ===== 批量多选删除 =====
+function toggleSelectAll(checkbox) {
+  var checkboxes = document.querySelectorAll('.row-checkbox');
+  checkboxes.forEach(function(cb) { cb.checked = checkbox.checked; });
+  updateBatchCount();
+}
+
+function updateBatchCount() {
+  var checked = document.querySelectorAll('.row-checkbox:checked');
+  var btn = document.getElementById('btnBatchDel');
+  var count = document.getElementById('batchCount');
+  if (checked.length > 0) {
+    btn.style.display = 'inline-block';
+    count.textContent = checked.length;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function batchDelete() {
+  var checked = document.querySelectorAll('.row-checkbox:checked');
+  if (checked.length === 0) return;
+  var ids = [];
+  var names = [];
+  checked.forEach(function(cb) {
+    var id = parseInt(cb.value);
+    ids.push(id);
+    var cust = customers.find(function(c){return c.id === id;});
+    if (cust) names.push(cust.custName);
+  });
+  if (confirm('确定删除以下 '+ids.length+' 个客户吗？此操作不可撤销。\n\n'+names.join('、'))) {
+    customers = customers.filter(function(c){return ids.indexOf(c.id) === -1;});
+    saveData();
+    onSearch();
+    renderTableBody();
+    showToast('已删除 '+ids.length+' 条客户记录');
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// 点击遮罩层关闭弹窗
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('linkModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeLinkModal();
+});
+document.getElementById('importModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeImportModal();
+});
+document.getElementById('moduleImportOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModuleImportModal();
+});
+
+// ==================== 相关链接 ====================
+// 判断路径是网址、文件还是文件夹
+function classifyLink(url) {
+  url = url.trim();
+  if (/^https?:\/\//i.test(url)) return 'url';
+  // 文件夹：以\或/结尾，或没有扩展名但含路径分隔符
+  if (/[\\\/]$/.test(url)) return 'folder';
+  var lastSeg = url.split(/[\\\/]/).pop();
+  if (lastSeg.indexOf('.') === -1 && /[\\\/]/.test(url)) return 'folder';
+  // 本地文件路径
+  if (/^[A-Za-z]:[\\\/]/.test(url) || /^\\\\/.test(url)) return 'file';
+  // 默认当作网址
+  return 'url';
+}
+
+// 本地路径转 file:/// 协议
+function pathToFileUrl(path) {
+  var fileUrl = path.replace(/\\/g, '/');
+  if (!/^file:\/\//.test(fileUrl)) {
+    fileUrl = 'file:///' + fileUrl.replace(/^[\/\\]+/, '');
+  }
+  return fileUrl;
+}
+
+function renderLinks() {
+  var bar = document.getElementById('linkBar');
+  var existing = bar.querySelectorAll('a');
+  existing.forEach(function(a){a.remove();});
+  links.forEach(function(link, i) {
+    var a = document.createElement('a');
+    a.textContent = link.name;
+    a.title = link.url;
+    a.onclick = function(e){ e.preventDefault(); openLink(link); };
+    a.style.cursor = 'pointer';
+    var edit = document.createElement('span');
+    edit.className = 'edit';
+    edit.innerHTML = '&#9998;';
+    edit.title = '编辑链接';
+    edit.onclick = function(e){ e.stopPropagation(); e.preventDefault(); editLink(i); };
+    a.appendChild(edit);
+    var del = document.createElement('span');
+    del.className = 'del';
+    del.textContent = '\u00d7';
+    del.title = '删除链接';
+    del.onclick = function(e){ e.stopPropagation(); e.preventDefault(); deleteLink(i); };
+    a.appendChild(del);
+    bar.insertBefore(a, bar.querySelector('.add-link-btn'));
+  });
+}
+
+var editingLinkIndex = -1;
+
+function addLinkDialog() {
+  editingLinkIndex = -1;
+  document.getElementById('linkModalTitle').textContent = '添加链接';
+  document.getElementById('linkSaveBtn').textContent = '保存';
+  document.getElementById('linkName').value = '';
+  document.getElementById('linkUrl').value = '';
+  document.getElementById('linkModalOverlay').classList.add('show');
+}
+
+function editLink(idx) {
+  editingLinkIndex = idx;
+  document.getElementById('linkModalTitle').textContent = '编辑链接';
+  document.getElementById('linkSaveBtn').textContent = '保存修改';
+  document.getElementById('linkName').value = links[idx].name;
+  document.getElementById('linkUrl').value = links[idx].url;
+  document.getElementById('linkModalOverlay').classList.add('show');
+}
+
+function closeLinkModal() {
+  document.getElementById('linkModalOverlay').classList.remove('show');
+  editingLinkIndex = -1;
+}
+
+function saveLink() {
+  var name = document.getElementById('linkName').value.trim();
+  var url = document.getElementById('linkUrl').value.trim();
+  if (!name || !url) {
+    showToast('请填写链接名称和网址或路径');
+    return;
+  }
+  var linkType = classifyLink(url);
+  if (editingLinkIndex >= 0) {
+    links[editingLinkIndex] = {name: name, url: url, type: linkType};
+    showToast('链接已修改');
+  } else {
+    links.push({name: name, url: url, type: linkType});
+    showToast('链接已添加');
+  }
+  saveLinks();
+  renderLinks();
+  closeLinkModal();
+}
+
+function deleteLink(idx) {
+  if (!confirm('确定删除此链接吗？')) return;
+  links.splice(idx, 1);
+  saveLinks();
+  renderLinks();
+}
+
+function openLink(link) {
+  var url = link.url.trim();
+  var linkType = link.type || classifyLink(url);
+  if (linkType === 'url') {
+    // 网址：用默认浏览器打开
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    window.open(url, '_blank');
+  } else if (linkType === 'folder') {
+    // 文件夹：在浏览器中打开
+    window.open(pathToFileUrl(url), '_blank');
+  } else if (linkType === 'file') {
+    // 本地文件：直接在浏览器下载
+    var fileName = url.split(/[\\\/]/).pop() || link.name;
+    downloadLocalFile(url, fileName);
+  }
+}
+
+function downloadLocalFile(filePath, fileName) {
+  var fileUrl = pathToFileUrl(filePath);
+  var a = document.createElement('a');
+  a.href = fileUrl;
+  a.download = fileName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('正在下载：' + fileName);
+}
+
+// ==================== 导入导出 ====================
+function openImportModal() {
+  document.getElementById('importModalOverlay').classList.add('show');
+}
+
+function closeImportModal() {
+  document.getElementById('importModalOverlay').classList.remove('show');
+}
+
+function downloadTemplate() {
+  var headers = ['序号','营服','客户经理','五级包区','客户名称','cust_id','月消费(元)','行业类型',
+    '客户编码','代表号码','缴费编码','缴费银行','缴费账户','主营业务','网络规范',
+    '联系人','职务','联系电话',
+    '合同编码','合同到期日期','合同类型','合同内容','合同月租',
+    '产品','接入号','服务编码','产品月租','套餐内容','产品到期日期',
+    '商机名称','商机金额','获取时间','跟进情况','转化时间',
+    '友商名称','客户在用业务','月租(元)','到期日期','可执行策反方案',
+    '配餐日期','配餐内容','价值','可执行性分析','执行日期'];
+  var csv = '\uFEFF';
+  csv += headers.join(',') + '\n';
+  csv += '1,开平营服中心,张伟,开平三埠片区,示例企业有限公司,KP20260001,28000,制造业,';
+  csv += 'KP001,13800138001,GZ20260001,中国银行,6228480012345678,机电设备制造,100M专线+50部固话,';
+  csv += '李建国,总经理,13800138001,';
+  csv += 'HT20260001,2026-12-31,综合通信,专线+固话+ITV,12000,';
+  csv += '移动,13800138001,FW001,3000,集团套餐200部,2026-12-31,';
+  csv += '5G+工业互联网,150000,2026-07-01,客户有需求待跟进,,';
+  csv += '移动,移动集团V网,2000,2026-06-30,可推我司集团套餐替代,';
+  csv += '2026-07-15,客户答谢宴,5000,客户近期有续约意向,2026-07-20\n';
+  var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '客户管理系统_导入模板.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showToast('模板已下载');
+}
+
+// 导入弹窗拖拽事件
+function setupImportDropZone() {
+  var dropZone = document.getElementById('importDropZone');
+  var fileInput = document.getElementById('importFileInput');
+  if (!dropZone) return;
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files[0]) {
+      importExcel(fileInput);
+      closeImportModal();
+    }
+  });
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', function(e) {
+    dropZone.classList.remove('dragover');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+      var file = e.dataTransfer.files[0];
+      // 创建一个模拟的 input 元素
+      var mockInput = { files: [file], value: '' };
+      importExcel(mockInput);
+      closeImportModal();
+    }
+  });
+}
+
+function exportData() {
+  // 只导出选中的客户（勾选checkbox的）
+  var checked = document.querySelectorAll('.row-checkbox:checked');
+  var exportList;
+  if (checked.length > 0) {
+    exportList = [];
+    checked.forEach(function(cb) {
+      var id = parseInt(cb.value);
+      var cust = customers.find(function(c){return c.id === id;});
+      if (cust) exportList.push(cust);
+    });
+  } else {
+    showToast('请先勾选要导出的客户');
+    return;
+  }
+  // 导出为CSV
+  var headers = ['序号','营服','客户经理','五级包区','客户名称','cust_id','月消费(元)','行业类型',
+    '客户编码','代表号码','缴费编码','缴费银行','缴费账户','主营业务','网络规范',
+    '联系人','职务','联系电话',
+    '合同编码','合同到期日期','合同类型','合同内容','合同月租',
+    '产品','接入号','服务编码','产品月租','套餐内容','产品到期日期',
+    '商机名称','商机金额','获取时间','跟进情况','转化时间',
+    '友商名称','客户在用业务','月租(元)','到期日期','可执行策反方案',
+    '配餐日期','配餐内容','价值','可执行性分析','执行日期'];
+  var csv = '\uFEFF'; // BOM
+  csv += headers.join(',') + '\n';
+  exportList.forEach(function(c, idx) {
+    // 每个客户可能有多个子项，需要展开
+    var maxRows = Math.max(
+      (c.paymentCodes||[]).length, (c.contacts||[]).length,
+      (c.contracts||[]).length, (c.products||[]).length,
+      (c.opportunities||[]).length, (c.competitors||[]).length,
+      (c.mealPlans||[]).length, 1
+    );
+    for (var i = 0; i < maxRows; i++) {
+      var pc = (c.paymentCodes||[])[i] || {};
+      var ct = (c.contacts||[])[i] || {};
+      var cn = (c.contracts||[])[i] || {};
+      var pd = (c.products||[])[i] || {};
+      var op = (c.opportunities||[])[i] || {};
+      var cp = (c.competitors||[])[i] || {};
+      var mp = (c.mealPlans||[])[i] || {};
+      var row = [
+        i===0 ? (idx+1) : '',
+        c.yingfu||'',
+        c.manager||'',
+        c.wuji||'',
+        c.custName||'',
+        c.custId||'',
+        c.monthFee||'',
+        c.industry||'',
+        pc.custCode||'', pc.repNum||'', pc.payCode||'', pc.payBank||'', pc.payAccount||'',
+        c.business&&c.business.main||'',
+        c.business&&c.business.network||'',
+        ct.name||'', ct.position||'', ct.phone||'',
+        cn.code||'', cn.expireDate||'', cn.type||'', cn.content||'', cn.fee||'',
+        pd.name||'', pd.accessNum||'', pd.serviceCode||'', pd.fee||'', pd.content||'', pd.expireDate||'',
+        op.name||'', op.amount||'', op.getTime||'', op.followUp||'', op.convertTime||'',
+        cp.compName||'', cp.custBusiness||'', cp.fee||'', cp.expireDate||'', cp.strategy||'',
+        mp.mealDate||'', mp.mealContent||'', mp.value||'', mp.analysis||'', mp.execDate||''
+      ];
+      csv += row.map(csvEscape).join(',') + '\n';
+    }
+  });
+  // 下载
+  var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '客户管理系统_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showToast('已导出 '+exportList.length+' 条客户记录');
+}
+
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  var s = v.toString();
+  if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function importExcel(input) {
+  var file = input.files[0];
+  if (!file) return;
+  showToast('正在导入...');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      // 使用SheetJS
+      if (typeof XLSX === 'undefined') {
+        // 动态加载SheetJS
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = function() {
+          processExcelFile(data);
+        };
+        document.head.appendChild(script);
+      } else {
+        processExcelFile(data);
+      }
+    } catch(ex) {
+      showToast('导入失败：'+ex.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+function processExcelFile(data) {
+  try {
+    var wb = XLSX.read(data, {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    if (rows.length < 2) {
+      showToast('Excel文件没有数据');
+      return;
+    }
+    var headers = (rows[0]||[]).map(function(h){return h.toString().trim();});
+    var importedCount = 0;
+    var importedCustomers = [];
+    var currentCust = null;
+
+    // 查找或创建客户（按客户名称合并）
+    function findOrCreateCustomer(custName, row) {
+      for (var k = 0; k < importedCustomers.length; k++) {
+        if (importedCustomers[k].custName === custName) return importedCustomers[k];
+      }
+      var newCust = {
+        id: nextId() + importedCount,
+        yingfu: getCellByHeader(row, headers, ['营服','营服名称']),
+        manager: getCellByHeader(row, headers, ['客户经理','经理']),
+        wuji: getCellByHeader(row, headers, ['五级包区','包区']),
+        custName: custName,
+        custId: getCellByHeader(row, headers, ['cust_id','客户ID']),
+        monthFee: parseFloat(getCellByHeader(row, headers, ['月消费','月消费(元)']))||0,
+        industry: getCellByHeader(row, headers, ['行业类型','行业']),
+        paymentCodes: [], contacts: [], contracts: [], products: [],
+        opportunities: [], competitors: [], mealPlans: [],
+        business: {main:'', network:''}
+      };
+      newCust.business.main = getCellByHeader(row, headers, ['主营业务']);
+      newCust.business.network = getCellByHeader(row, headers, ['网络规范']);
+      importedCustomers.push(newCust);
+      importedCount++;
+      return newCust;
+    }
+
+    // 将一行的各模块数据追加到客户
+    function appendModules(cust, row) {
+      // 缴费信息
+      var cc = getCellByHeader(row, headers, ['客户编码']);
+      var rn = getCellByHeader(row, headers, ['代表号码']);
+      var pc = getCellByHeader(row, headers, ['缴费编码']);
+      var pb = getCellByHeader(row, headers, ['缴费银行']);
+      var pa = getCellByHeader(row, headers, ['缴费账户']);
+      if (cc||rn||pc||pb||pa) cust.paymentCodes.push({custCode:cc||'',repNum:rn||'',payCode:pc||'',payBank:pb||'',payAccount:pa||''});
+      // 联系人
+      var cn = getCellByHeader(row, headers, ['联系人']);
+      var pos = getCellByHeader(row, headers, ['职务']);
+      var ph = getCellByHeader(row, headers, ['联系电话']);
+      if (cn||pos||ph) cust.contacts.push({name:cn||'',position:pos||'',phone:ph||''});
+      // 合同
+      var hcode = getCellByHeader(row, headers, ['合同编码']);
+      var hdate = getCellByHeader(row, headers, ['合同到期日期','到期日期']);
+      var htype = getCellByHeader(row, headers, ['合同类型']);
+      var hcontent = getCellByHeader(row, headers, ['合同内容']);
+      var hfee = getCellByHeader(row, headers, ['合同月租','月租(元)']);
+      if (hcode||hdate||htype||hcontent||hfee) cust.contracts.push({code:hcode||'',expireDate:hdate||'',type:htype||'',content:hcontent||'',fee:hfee||''});
+      // 产品
+      var pname = getCellByHeader(row, headers, ['产品']);
+      var pacc = getCellByHeader(row, headers, ['接入号']);
+      var psc = getCellByHeader(row, headers, ['服务编码']);
+      var pfee = getCellByHeader(row, headers, ['产品月租']);
+      var pcontent = getCellByHeader(row, headers, ['套餐内容']);
+      var pdate = getCellByHeader(row, headers, ['产品到期日期']);
+      if (pname||pacc||psc||pfee||pcontent||pdate) cust.products.push({name:pname||'',accessNum:pacc||'',serviceCode:psc||'',fee:pfee||'',content:pcontent||'',expireDate:pdate||''});
+      // 商机
+      var oname = getCellByHeader(row, headers, ['商机名称']);
+      var oamount = getCellByHeader(row, headers, ['商机金额','商机金额(元)']);
+      var ogt = getCellByHeader(row, headers, ['获取时间']);
+      var ofu = getCellByHeader(row, headers, ['跟进情况']);
+      var oct = getCellByHeader(row, headers, ['转化时间']);
+      if (oname||oamount||ogt||ofu||oct) cust.opportunities.push({name:oname||'',amount:oamount||'',getTime:ogt||'',followUp:ofu||'',convertTime:oct||''});
+      // 友商信息
+      var cpn = getCellByHeader(row, headers, ['友商名称']);
+      var cpb = getCellByHeader(row, headers, ['客户在用业务']);
+      var cpf = getCellByHeader(row, headers, ['月租(元)']);
+      var cpd = getCellByHeader(row, headers, ['到期日期','友商到期日期']);
+      var cps = getCellByHeader(row, headers, ['可执行策反方案']);
+      if (cpn||cpb||cpf||cpd||cps) cust.competitors.push({compName:cpn||'',custBusiness:cpb||'',fee:cpf||'',expireDate:cpd||'',strategy:cps||''});
+      // 配餐方案
+      var md = getCellByHeader(row, headers, ['配餐日期']);
+      var mc = getCellByHeader(row, headers, ['配餐内容']);
+      var mv = getCellByHeader(row, headers, ['价值']);
+      var ma = getCellByHeader(row, headers, ['可执行性分析']);
+      var me = getCellByHeader(row, headers, ['执行日期']);
+      if (md||mc||mv||ma||me) cust.mealPlans.push({mealDate:md||'',mealContent:mc||'',value:mv||'',analysis:ma||'',execDate:me||''});
+    }
+
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (row.join('').trim() === '') continue;
+      var custName = getCellByHeader(row, headers, ['客户名称','客户名称']);
+      if (custName) {
+        // 有客户名称：查找已有同名客户或创建新客户
+        currentCust = findOrCreateCustomer(custName.toString().trim(), row);
+      }
+      // 无论新客户还是续行，都追加各模块数据
+      if (currentCust) {
+        appendModules(currentCust, row);
+      }
+    }
+    // 将导入的客户合并到现有数据
+    importedCustomers.forEach(function(c) { customers.push(c); });
+    saveData();
+    onSearch();
+    renderTableBody();
+    showToast('成功导入 '+importedCount+' 条客户记录');
+  } catch(ex) {
+    showToast('解析失败：'+ex.message);
+  }
+}
+
+function getCellByHeader(row, headers, names) {
+  for (var n = 0; n < names.length; n++) {
+    for (var h = 0; h < headers.length; h++) {
+      if (headers[h] === names[n]) {
+        return row[h] !== undefined ? row[h].toString() : '';
+      }
+    }
+  }
+  return '';
+}
+
+// ==================== Toast ====================
+var toastTimer = null;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+// ==================== 登录验证 ====================
+function doLogin() {
+  var account = document.getElementById('loginAccount').value.trim();
+  var password = document.getElementById('loginPassword').value.trim();
+  if (account === 'kaiping@gdct' && password === 'kaiping@gdct') {
+    document.getElementById('loginOverlay').classList.add('hide');
+    document.getElementById('loginError').style.display = 'none';
+    sessionStorage.setItem('kaiping_logged_in', '1');
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+// 登录弹窗回车提交
+document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('loginAccount').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+});
+
+// ==================== 备注查看 ====================
+var remarkViewPageInfo = {page:1, size:3};
+
+function viewRemark(id) {
+  var cust = customers.find(function(c){return c.id === id;});
+  if (!cust) return;
+  document.getElementById('remarkModalTitle').textContent = (cust.custName || '') + ' - 备注';
+  var html = '';
+  var remarks = cust.remarks || [];
+  if (remarks.length === 0) {
+    var prodStr = (cust.products||[]).map(function(p){return p.name;}).filter(function(v,i,arr){return arr.indexOf(v)===i;}).join('、');
+    var firstRep = (cust.paymentCodes&&cust.paymentCodes[0]&&cust.paymentCodes[0].repNum) || '';
+    var defRemark = (cust.custName||'') + '是我司政企客户，在用我司' + (prodStr||'') + '业务，月费用' + (cust.monthFee||0) + '元，代表号码' + (firstRep||'');
+    remarks = [{content: defRemark}];
+  }
+  html += '<div>';
+  html += '<h3 style="font-size:14px;color:#1890ff;margin-bottom:8px;border-bottom:2px solid #1890ff;padding-bottom:4px;">备注</h3>';
+  html += '<div id="remarkViewList">';
+  remarks.forEach(function(r, i) {
+    html += '<div class="remark-view-item" data-idx="'+i+'" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.7;white-space:pre-wrap;">'+escHtml(r.content||'')+'</div>';
+  });
+  html += '</div>';
+  html += '<div class="module-pagination" id="remarkView_pageNav"></div>';
+  html += '</div>';
+  document.getElementById('remarkModalBody').innerHTML = html;
+  document.getElementById('remarkModalOverlay').classList.add('show');
+  remarkViewPageInfo.page = 1;
+  refreshRemarkViewPage();
+}
+
+function refreshRemarkViewPage() {
+  var items = document.querySelectorAll('.remark-view-item');
+  var total = items.length;
+  var info = remarkViewPageInfo;
+  var totalPages = Math.max(1, Math.ceil(total / info.size));
+  if (info.page > totalPages) info.page = totalPages;
+  if (info.page < 1) info.page = 1;
+  var start = (info.page - 1) * info.size;
+  var end = start + info.size;
+  items.forEach(function(item, i) {
+    item.style.display = (i >= start && i < end) ? '' : 'none';
+  });
+  renderRemarkViewPagination(total, totalPages);
+}
+
+function renderRemarkViewPagination(total, totalPages) {
+  var container = document.getElementById('remarkView_pageNav');
+  if (!container) return;
+  container.style.display = 'flex';
+  var info = remarkViewPageInfo;
+  var html = '';
+  html += '<button class="mp-btn" onclick="goRemarkViewPage(1)"'+(info.page===1?' disabled':'')+'>首页</button>';
+  html += '<button class="mp-btn" onclick="goRemarkViewPage('+(info.page-1)+')"'+(info.page===1?' disabled':'')+'>«</button>';
+  var s = Math.max(1, info.page - 2);
+  var e2 = Math.min(totalPages, info.page + 2);
+  for (var p = s; p <= e2; p++) {
+    html += '<button class="mp-btn'+(p===info.page?' active':'')+'" onclick="goRemarkViewPage('+p+')">'+p+'</button>';
+  }
+  html += '<button class="mp-btn" onclick="goRemarkViewPage('+(info.page+1)+')"'+(info.page===totalPages?' disabled':'')+'>»</button>';
+  html += '<button class="mp-btn" onclick="goRemarkViewPage('+totalPages+')"'+(info.page===totalPages?' disabled':'')+'>末页</button>';
+  html += '<span class="mp-info">'+info.page+'/'+totalPages+'页 共'+total+'条</span>';
+  html += '<span class="mp-info">跳至</span><input type="number" class="mp-jump" value="'+info.page+'" min="1" max="'+totalPages+'" onkeydown="if(event.key===\'Enter\')goRemarkViewPage(parseInt(this.value)||1)"><span class="mp-info">页</span>';
+  html += '<span class="mp-size-label">每页</span><input type="number" class="mp-size-input" value="'+info.size+'" min="1" max="999" onkeydown="if(event.key===\'Enter\')changeRemarkViewPageSize(this.value)" onblur="changeRemarkViewPageSize(this.value)"><span class="mp-size-label">条</span>';
+  container.innerHTML = html;
+}
+
+function goRemarkViewPage(page) {
+  remarkViewPageInfo.page = page;
+  refreshRemarkViewPage();
+}
+
+function changeRemarkViewPageSize(newSize) {
+  remarkViewPageInfo.size = parseInt(newSize) || 3;
+  remarkViewPageInfo.page = 1;
+  refreshRemarkViewPage();
+}
+
+function closeRemarkModal() {
+  document.getElementById('remarkModalOverlay').classList.remove('show');
+}
+
+// 点击备注弹窗遮罩关闭
+document.getElementById('remarkModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeRemarkModal();
+});
+
+// ==================== 模块单独导入导出 ====================
+var MODULE_CONFIG = {
+  paymentCodes: {name:'缴费信息', fields:['custCode','repNum','payCode','payBank','payAccount'], labels:['客户编码','代表号码','缴费编码','缴费银行','缴费账户'], tbodyId:'payCodeRows'},
+  contacts: {name:'关键联系人', fields:['name','position','phone'], labels:['联系人','职务','联系电话'], tbodyId:'contactRows'},
+  contracts: {name:'合同情况', fields:['code','expireDate','type','content','fee'], labels:['合同编码','合同到期日期','合同类型','合同内容','合同月租'], tbodyId:'contractRows'},
+  products: {name:'业务结构', fields:['name','accessNum','serviceCode','fee','content','expireDate'], labels:['产品','接入号','服务编码','产品月租','套餐内容','产品到期日期'], tbodyId:'productRows'},
+  opportunities: {name:'商机情况', fields:['name','amount','getTime','followUp','convertTime'], labels:['商机名称','商机金额','获取时间','跟进情况','转化时间'], tbodyId:'oppRows'},
+  competitors: {name:'友商信息', fields:['compName','custBusiness','fee','expireDate','strategy'], labels:['友商名称','客户在用业务','月租(元)','到期日期','可执行策反方案'], tbodyId:'compRows'},
+  mealPlans: {name:'配餐方案', fields:['mealDate','mealContent','value','analysis','execDate'], labels:['配餐日期','配餐内容','价值','可执行性分析','执行日期'], tbodyId:'mealPlanRows'}
+};
+
+function exportModule(moduleKey) {
+  var config = MODULE_CONFIG[moduleKey];
+  if (!config) return;
+  var cust = customers.find(function(c){return c.id === currentCustId;});
+  if (!cust) { showToast('未找到客户数据'); return; }
+  var moduleData = cust[moduleKey] || [];
+  // 基础信息头 + 模块字段头
+  var baseHeaders = ['营服名称','客户经理','五级包区','客户名称','cust_id','月消费(元)','行业类型'];
+  var headers = baseHeaders.concat(config.labels);
+  var csv = '\uFEFF';
+  csv += headers.join(',') + '\n';
+  if (moduleData.length === 0) {
+    // 空行也输出基础信息
+    var emptyRow = [cust.yingfu||'', cust.manager||'', cust.wuji||'', cust.custName||'', cust.custId||'', cust.monthFee||'', cust.industry||''];
+    for (var k = 0; k < config.labels.length; k++) emptyRow.push('');
+    csv += emptyRow.map(csvEscape).join(',') + '\n';
+  } else {
+    moduleData.forEach(function(item) {
+      var row = [cust.yingfu||'', cust.manager||'', cust.wuji||'', cust.custName||'', cust.custId||'', cust.monthFee||'', cust.industry||''];
+      config.fields.forEach(function(f) {
+        row.push(item[f] || '');
+      });
+      csv += row.map(csvEscape).join(',') + '\n';
+    });
+  }
+  var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = config.name + '_' + (cust.custName||'') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showToast('已导出' + config.name);
+}
+
+function importModule(input, moduleKey) {
+  var config = MODULE_CONFIG[moduleKey];
+  if (!config) return;
+  var file = input.files[0];
+  if (!file) return;
+  showToast('正在导入'+config.name+'...');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      if (typeof XLSX === 'undefined') {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = function() { processModuleImport(data, moduleKey, config); };
+        document.head.appendChild(script);
+      } else {
+        processModuleImport(data, moduleKey, config);
+      }
+    } catch(ex) {
+      showToast('导入失败：'+ex.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+// 模块导入弹窗
+var currentModuleKey = null;
+function openModuleImportModal(moduleKey) {
+  currentModuleKey = moduleKey;
+  var config = MODULE_CONFIG[moduleKey];
+  document.getElementById('moduleImportTitle').textContent = '导入' + (config ? config.name : '');
+  document.getElementById('moduleFileInput').value = '';
+  document.getElementById('moduleImportOverlay').classList.add('show');
+  // 设置拖拽事件
+  setupModuleDropZone(moduleKey);
+}
+
+function closeModuleImportModal() {
+  document.getElementById('moduleImportOverlay').classList.remove('show');
+}
+
+function downloadModuleTemplate() {
+  if (!currentModuleKey) return;
+  var config = MODULE_CONFIG[currentModuleKey];
+  if (!config) return;
+  // 用XLSX生成xlsx模板
+  var headers = config.labels;
+  var wsData = [headers];
+  // 添加一行示例
+  var sample = config.fields.map(function(f) { return ''; });
+  wsData.push(sample);
+  if (typeof XLSX === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    script.onload = function() {
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, config.name);
+      XLSX.writeFile(wb, config.name + '_导入模板.xlsx');
+      showToast('模板已下载');
+    };
+    document.head.appendChild(script);
+  } else {
+    var ws = XLSX.utils.aoa_to_sheet(wsData);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, config.name);
+    XLSX.writeFile(wb, config.name + '_导入模板.xlsx');
+    showToast('模板已下载');
+  }
+}
+
+function setupModuleDropZone(moduleKey) {
+  var dropZone = document.getElementById('moduleDropZone');
+  var fileInput = document.getElementById('moduleFileInput');
+  // 移除旧事件
+  var newDrop = dropZone.cloneNode(true);
+  dropZone.parentNode.replaceChild(newDrop, dropZone);
+  var newInput = fileInput.cloneNode(true);
+  fileInput.parentNode.replaceChild(newInput, fileInput);
+  newInput.addEventListener('change', function() {
+    if (newInput.files[0]) {
+      importModule(newInput, moduleKey);
+      closeModuleImportModal();
+    }
+  });
+  newDrop.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    newDrop.classList.add('dragover');
+  });
+  newDrop.addEventListener('dragleave', function(e) {
+    newDrop.classList.remove('dragover');
+  });
+  newDrop.addEventListener('drop', function(e) {
+    e.preventDefault();
+    newDrop.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+      var mockInput = { files: [e.dataTransfer.files[0]], value: '' };
+      importModule(mockInput, moduleKey);
+      closeModuleImportModal();
+    }
+  });
+}
+
+// ==================== 悬浮按钮 ====================
+function scrollTopBottom(dir) {
+  var scrollEl = document.getElementById('tableScroll');
+  if (!scrollEl) return;
+  if (dir === 'top') {
+    scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+  }
+}
+
+function processModuleImport(data, moduleKey, config) {
+  try {
+    var wb = XLSX.read(data, {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    if (rows.length < 2) { showToast('文件没有数据'); return; }
+    var headers = (rows[0]||[]).map(function(h){return h.toString().trim();});
+    var newItems = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (row.join('').trim() === '') continue;
+      var obj = {};
+      var hasVal = false;
+      config.fields.forEach(function(f, idx) {
+        var val = getCellByHeader(row, headers, [config.labels[idx]]) || '';
+        // 也尝试英文字段名
+        if (!val) val = getCellByHeader(row, headers, [f]) || '';
+        obj[f] = val;
+        if (val) hasVal = true;
+      });
+      if (hasVal) newItems.push(obj);
+    }
+    if (newItems.length === 0) { showToast('未找到有效数据'); return; }
+    // 追加到当前编辑的表格
+    var tbody = document.getElementById(config.tbodyId);
+    if (tbody) {
+      newItems.forEach(function(item) {
+        var tr = document.createElement('tr');
+        var renderFn = {
+          paymentCodes: renderPayCodeRow,
+          contacts: renderContactRow,
+          contracts: renderContractRow,
+          products: renderProductRow,
+          opportunities: renderOppRow,
+          competitors: renderCompRow,
+          mealPlans: renderMealPlanRow
+        }[moduleKey];
+        if (renderFn) {
+          tr.innerHTML = renderFn(item, 0);
+          tbody.appendChild(tr);
+        }
+      });
+      showToast('已导入 '+newItems.length+' 条'+config.name);
+      refreshModulePage(config.tbodyId);
+    }
+  } catch(ex) {
+    showToast('解析失败：'+ex.message);
+  }
+}
+
+// ==================== 云端同步配置弹窗 ====================
+function openSyncConfig() {
+  if (syncConfig) {
+    document.getElementById('syncOwner').value = syncConfig.owner || '';
+    document.getElementById('syncRepo').value = syncConfig.repo || '';
+    document.getElementById('syncBranch').value = syncConfig.branch || 'main';
+    document.getElementById('syncFilePath').value = syncConfig.filePath || 'data/customers.json';
+    document.getElementById('syncToken').value = syncConfig.token || '';
+    document.getElementById('syncInterval').value = syncConfig.interval || 30;
+  } else {
+    document.getElementById('syncBranch').value = 'main';
+    document.getElementById('syncFilePath').value = 'data/customers.json';
+    document.getElementById('syncInterval').value = 30;
+  }
+  document.getElementById('syncConfigOverlay').classList.add('show');
+}
+
+function closeSyncConfig() {
+  document.getElementById('syncConfigOverlay').classList.remove('show');
+}
+
+function saveSyncConfig() {
+  var owner = document.getElementById('syncOwner').value.trim();
+  var repo = document.getElementById('syncRepo').value.trim();
+  var branch = document.getElementById('syncBranch').value.trim() || 'main';
+  var filePath = document.getElementById('syncFilePath').value.trim() || 'data/customers.json';
+  var token = document.getElementById('syncToken').value.trim();
+  var interval = parseInt(document.getElementById('syncInterval').value) || 30;
+  if (!owner || !repo || !token) {
+    showToast('请填写必填项');
+    return;
+  }
+  syncConfig = {owner:owner, repo:repo, branch:branch, filePath:filePath, token:token, interval:interval};
+  saveSyncConfigToStorage();
+  closeSyncConfig();
+  document.getElementById('manualSyncBtn').style.display = 'inline-flex';
+  showToast('正在连接云端...');
+  // 先拉取云端数据
+  pullFromCloud(function(ok) {
+    if (ok && lastCloudSha !== null) {
+      onSearch(); renderTableBody(); renderLinks();
+      startAutoSync();
+      showToast('云端同步已开启');
+    } else if (ok && lastCloudSha === null) {
+      pushToCloud(function(ok2) {
+        if (ok2) { startAutoSync(); showToast('已初始化云端数据'); }
+        else { showToast('初始化失败，请查看右上角错误提示'); }
+      });
+    } else {
+      showToast('连接失败，请查看右上角错误提示');
+    }
+  });
+}
+
+function disconnectCloud() {
+  syncConfig = null;
+  localStorage.removeItem(SYNC_CONFIG_KEY);
+  if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
+  document.getElementById('manualSyncBtn').style.display = 'none';
+  updateSyncIndicator('local', '本地模式');
+  closeSyncConfig();
+  showToast('已断开云端，切换为本地模式');
+}
+
+// 点击遮罩层关闭
+document.getElementById('syncConfigOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSyncConfig();
+});
+
+// ==================== 初始化 ====================
+// 检查登录状态
+if (sessionStorage.getItem('kaiping_logged_in') === '1') {
+  document.getElementById('loginOverlay').classList.add('hide');
+}
+// 加载同步配置
+loadSyncConfig();
+if (isCloudEnabled()) {
+  document.getElementById('manualSyncBtn').style.display = 'inline-flex';
+  updateSyncIndicator('cloud', '正在连接...');
+  // 先从云端拉取数据
+  pullFromCloud(function(ok) {
+    if (ok && lastCloudSha !== null) {
+      onSearch(); renderTableBody(); renderLinks();
+      startAutoSync();
+    } else if (ok && lastCloudSha === null) {
+      pushToCloud(function() { startAutoSync(); });
+    }
+  });
+}
+loadData();
+renderTableHead();
+renderTableBody();
+renderLinks();
+setupImportDropZone();
+</script>
+</body>
+</html>
